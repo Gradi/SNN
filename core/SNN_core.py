@@ -1,6 +1,6 @@
 import numpy as _np
-import warnings as _wrn
-import neuron_functions as _nf
+
+from core import neuron_functions as _nf
 
 
 class FlatArrayContainer(_np.ndarray):

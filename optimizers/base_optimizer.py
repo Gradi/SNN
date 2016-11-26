@@ -17,7 +17,7 @@ class BaseOptimizer:
         self._maxIter = params.get("maxIter", 200)
         self._log = logging.getLogger("optimizers.base_optimizer")
 
-    def start(self, f, x, check_bounds=None):
+    def start(self, f, x):
         msg = "This optimizer isn't implemented: {}".format(self)
         self._log.critical(msg)
         raise NameError(msg)

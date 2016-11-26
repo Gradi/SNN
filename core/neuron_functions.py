@@ -28,6 +28,15 @@ def _neuron_func_ququadratic(x):
 def _neuron_func_simple_sigmoid(x, k=1):
     return (k * x) / (1 + _np.abs(k * x))
 
+
+def _neuron_func_const(x):
+    if type(x) == _np.ndarray:
+        x = _np.array(x)
+        x.fill(1.0)
+        return x
+    else:
+        return 1.0
+
 _functions = {}
 
 

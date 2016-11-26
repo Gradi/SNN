@@ -15,7 +15,7 @@ class GradientDescent(BaseOptimizer):
         self.__h = params.get("h", 1)
         self.__h_mul = params.get("h_mul", 0.5)
 
-    def start(self, f, x, check_bounds=None):
+    def start(self, f, x):
         x = _np.array(x)
         h = self.__h
 
@@ -23,8 +23,6 @@ class GradientDescent(BaseOptimizer):
         while iters < self._maxIter:
             gr_x = self.__grad(f, x)
             new_x = x + -1 * gr_x * h
-            if check_bounds is not None:
-                check_bounds(new_x)
             if f(x) < f(new_x):
                 h *= self.__h_mul
             else:

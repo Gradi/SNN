@@ -17,7 +17,7 @@ class CoordinateDescent(BaseOptimizer):
         self.__h_mul = params.get("h_mul", 0.7)
         self.__eps = params.get("eps", 1e-3)
 
-    def start(self, f, x, check_bounds=None):
+    def start(self, f, x):
         iterations = 0
         ph = None
         h = self.__h
@@ -35,20 +35,14 @@ class CoordinateDescent(BaseOptimizer):
                     return f(tx)
 
                 tx[i] += h
-                if check_bounds is not None:
-                    check_bounds(tx)
                 if f(tx) < f(x):
                     iteration_successful = True
                     x[i] = self.__minimize_direction(f_i, tx[i], h)
-                    if check_bounds is not None:
-                        check_bounds(x)
                 else:
                     tx[i] -= 2 * h
                     if f(tx) < f(x):
                         iteration_successful = True
                         x[i] = self.__minimize_direction(f_i, tx[i], -h)
-                        if check_bounds is not None:
-                            check_bounds(x)
             if not iteration_successful:
                 h *= self.__h_mul
             iterations += 1
@@ -65,9 +59,10 @@ class CoordinateDescent(BaseOptimizer):
 
     def __minimize_direction(self, f, x, h):
         next_x = x + h
-        while f(next_x) < f(x):
+        while f(next_x) < f(x) and abs(f(x) - f(next_x)) > self.__eps:
             x = next_x
             next_x += h
+            #self._log.info("[Coordinate Descent] X=%f, error=%f", x, f(x))
         return x
 
 

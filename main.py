@@ -1,16 +1,17 @@
-from SNN import SNN, load_from_file
-from utils.fast_nn import make_neurons, make_layer
-from utils.datagen import DataGen
-from teachers.MultiProcessTeacher import MultiProcessTeacher
-import neuron_functions as nf
-
-import numpy as np
-import matplotlib.pyplot as plt
-import sys
-import os.path
-import timeit
 import logging
+import os.path
+import sys
+import time
+import timeit
 
+import matplotlib.pyplot as plt
+import numpy as np
+
+from SNN import SNN, load_from_file, Layer, OptSNN
+from core import neuron_functions as nf
+from teachers.MultiProcessTeacher import MultiProcessTeacher
+from utils.datagen import DataGen
+from utils.fast_nn import make_neurons, make_layer
 
 if __name__ == "__main__":
 
@@ -22,38 +23,55 @@ if __name__ == "__main__":
     input_count = 3
     output_count = 1
 
-    weight_bounds = (-10, 10)
-    func_bounds = (-10, 10)
+    weight_bounds = (-30.0, 30.0)
+    func_bounds = (-30.0, 30.0)
 
 
     def f(x):
         k = 9.980493678923573
-        return k * x[0] * x[1] * x[2]
+        return k + x[0] + x[1] + x[2]
 
     datagen = DataGen(f, input_count, [[-5.0, 5.0]], error=0)
     if len(sys.argv[1:]) == 0:
         snn = SNN(weight_bounds, func_bounds)
-        snn.add_layer(make_layer("simple_sigmoid", input_count, 5, 1))
-        snn.add_layer(make_layer("simple_sigmoid", snn.net_output_len(), 5, 1))
+        l = Layer()
+        l.add_neurons(make_neurons("simple_sigmoid", input_count, 2, 1))
+        l.add_neurons(make_neurons("const", input_count, 2))
+        snn.add_layer(l)
         snn.add_layer(make_layer("linear", snn.net_output_len(), 1))
 
-        x, y = datagen.next(300)
+        x, y = datagen.next(3000)
+        snn.set_test_inputs(x, y)
 
         # Measuring time of snn.error function
-        snn.set_test_inputs(x, y)
         weights = snn.get_weights()
-        t = timeit.Timer(lambda: snn.error(weights), "gc.enable()")
-        seconds = t.timeit(1)
-        log.info("Execution time of error: %f sec(%5.0f ms)",seconds, seconds * 1000)
-        del t
+        t = timeit.Timer(lambda: snn.error(), "gc.enable()")
+        times = 1
+        seconds = t.timeit(times)
+        seconds /= times
+        log.info("Error of snn measured.")
 
-        optimizers = [{"name": "coordinate_descent", "params": {"maxIter": 100, "h": 3}},
-                      {"name": "gradient_descent", "params": {"maxIter": 100, "h": 0.5, "h_mul": 0.5}}]
+        # Measuring time of opt snn.error function
+        optsnn = OptSNN(snn)
+        log.info("Opt snn created")
+        optsnn.set_test_data(x, y)
+        weights = optsnn.get_weights()
+        t = timeit.Timer(lambda: optsnn.error())
+        opt_seconds = t.timeit(times)
+        opt_seconds /= times
+
+        log.info("Execution time of error: %f sec(%5.0f ms)", seconds, seconds * 1000)
+        log.info("Execution time of opt error: %f sec(%5.0f ms)", opt_seconds, opt_seconds * 1000)
+        log.info("Start error: %f", snn.error())
+        log.info("Start opt error: %f", optsnn.error())
+
+        optimizers = [{"name": "coordinate_descent", "params": {"maxIter": 2000, "h": 3}},
+                      {"name": "gradient_descent", "params": {"maxIter": 1000, "h": 2, "h_mul": 0.7}}]
         teacher = MultiProcessTeacher(optimizers,
-                                      snn.to_json(),
+                                      snn.to_json(False),
                                       {"x": x, "y": y},
-                                      process_num=7,
-                                      logging_config=logging_config)
+                                      process_num=2,
+                                      logging_config=None)
         error_history = open("error_history.csv", "w")
         best_result = None
 
@@ -66,9 +84,13 @@ if __name__ == "__main__":
                      None if best_result is None else best_result["error"])
             if best_result is None or result["error"] < best_result["error"]:
                 best_result = result
-                log.info("New best result: %f", best_result["error"])
+                log.info("New best result: %f, snn: %f", best_result["error"],
+                         snn.error(best_result["weights"]))
                 snn.set_weights(best_result["weights"])
                 snn.save_to_file("net.json")
+            restart_time = 2
+            log.info("Restarting in %d seconds.", restart_time)
+            time.sleep(restart_time)
 
     elif os.path.exists(sys.argv[1]):
         snn = load_from_file(sys.argv[1])

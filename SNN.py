@@ -1,12 +1,15 @@
-import numpy as _np
-import warnings as _wrn
-import SNN_core as _snn
 import json as _json
-import utils.fast_nn as _fnn
 import os.path as _path
+import warnings as _wrn
+import numpy as _np
+
+import utils.fast_nn as _fnn
+from core import SNN_core as _snn
+from core import Optimized_SNN as _opt_snn
 
 Layer  = _snn.Layer
 Neuron = _snn.Neuron
+OptSNN = _opt_snn.OptSNN
 
 
 class SNN:
@@ -26,6 +29,10 @@ class SNN:
         nn_results = list()
         for test_input in self.__test_inputs:
             nn_results.append(self.input(test_input))
+        nn_results = _np.array(nn_results)
+        if nn_results.size != self.__test_results.size:
+            raise NameError("Size of net results({}) != size of test results({})".
+                            format(nn_results.size, self.__test_results.size))
 
         total_sum = _np.zeros(self.net_output_len())
         for i in range(0, len(nn_results)):
@@ -49,10 +56,10 @@ class SNN:
         else:
             return result
 
-    def multi_input(self, input_data):
+    def multi_input(self, data):
         result = list()
-        for data in input_data:
-            result.append(self.input(data))
+        for d in data:
+            result.append(self.input(d))
         return _np.array(result)
 
     def set_weights(self, weights):
@@ -149,6 +156,12 @@ class SNN:
         json_str = self.to_json(with_weights)
         f.write(json_str)
         f.close()
+
+    def get_weights_bounds(self):
+        return self.__weight_bounds
+
+    def get_func_bounds(self):
+        return self.__func_bounds
 
 
 def load_from_json(json_str):
