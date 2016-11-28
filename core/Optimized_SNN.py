@@ -1,8 +1,7 @@
 import numpy as _np
-from core import neuron_functions as _nf
-from core.Optimized_Layer import  OptimizedLayer as _Layer
-import SNN as _snn
 
+from core.Optimized_Layer import  OptimizedLayer as _Layer
+from network import SNN as _snn
 
 
 class OptSNN:
@@ -80,7 +79,7 @@ class OptSNN:
         return mse
 
     def to_simple_snn(self):
-        res = _snn.SNN(self.__weights_bounds, self.__func_bounds)
+        res = _snn.SNN(0, self.__weights_bounds, self.__func_bounds)
         for l in self.__layers:
             res.add_layer(l.back_to_layer())
         return res

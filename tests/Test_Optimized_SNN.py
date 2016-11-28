@@ -1,8 +1,10 @@
-import SNN
-from core.Optimized_SNN import OptSNN
 import unittest
+
 import numpy as np
 import numpy.testing as np_test
+
+from core.Optimized_SNN import OptSNN
+from network import SNN
 
 
 class TestOptSNN(unittest.TestCase):
@@ -14,7 +16,7 @@ class TestOptSNN(unittest.TestCase):
         self.fill_value = 1.0
 
         prev_layer_out = self.input
-        self.snn = SNN.SNN()
+        self.snn = SNN.SNN(self.input)
         for i in range(0, self.layer_count):
             layer = SNN.Layer()
             for j in range(0, self.neuron_count):

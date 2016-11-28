@@ -1,20 +1,34 @@
-import multiprocessing as mp
-import tempfile
 import logging
-import numpy as np
+import multiprocessing as mp
 import os.path as path
+import tempfile
 import time
+
+import numpy as np
+
 import optimizers
-import SNN
+from network import SNN
 
 
 class MultiProcessTeacher:
 
     def __init__(self, optimizers,
-                 net_json,
+                 network,
                  test_data,
                  process_num=-1,
                  logging_config=None):
+        """
+
+        :param optimizers: dictionary of optimizers which this teacher will use
+         for minimizing an error function. Format: {"name:" <name-of-optimizer>,
+                                                    "params": {<params>}}
+        :param network: Instance of SNN object which should be taught.
+        :param test_data: Test inputs for net. Format: {"x": <inputs>, "y": <outputs>
+        :param process_num: Number of process. If not set defaults to cpu_count()
+        :param logging_config: Logging config for loggind.basicConfig() function.
+                If not set then no logs will be produced by child processes.
+                If set to "default" then default log config will be used.
+        """
         self.__log = logging.getLogger("teachers.MultiProcessTeacher")
         if process_num == -1:
             self.__process_num = mp.cpu_count()
@@ -23,10 +37,13 @@ class MultiProcessTeacher:
         self.__result_queue = mp.Queue()
         self.__task = dict()
         self.__task["optimizers"] = optimizers
-        self.__task["net_json"] = net_json
+        self.__task["net_json"] = network.to_json(with_weights=False)
         self.__task["test_data"] = test_data
         if logging_config is not None:
-            self.__task["logging_config"] = logging_config
+            if logging_config == "default":
+                self.__task["logging_config"] = {"format": "[%(asctime)s] %(levelname)s: %(message)s", "level": logging.NOTSET}
+            else:
+                self.__task["logging_config"] = logging_config
         self.__log.info("There will be %d processes.", self.__process_num)
 
     def teach(self):
@@ -94,7 +111,7 @@ def _worker_main(task, result_queue):
     np.savez_compressed(filename, weights=good_weights)
     log.info("Saved current weights to \"%s\"", filename)
     result = dict()
-    result["error"] = network.error(weights)
+    result["error"] = network.error()
     result["filename"] = filename
     result_queue.put(result)
     result_queue.close()

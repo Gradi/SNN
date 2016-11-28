@@ -49,12 +49,17 @@ class FlatArrayContainer(_np.ndarray):
 
 class Neuron:
 
-    def __init__(self, func_name, weights, func_weights=None):
+    def __init__(self, func_name, weights=None, func_weights=None,
+                 func_weights_count=0):
         self.__weights = weights
         self.__func_weights = func_weights
         self.__func_name = func_name
         self.__func = None
         self.__input_sum = 0.0
+        if func_weights is not None:
+            self.__func_weights_count = len(func_weights)
+        else:
+            self.__func_weights_count = func_weights_count
 
     def input(self, inputs):
         if inputs.size != self.w_len():
@@ -92,10 +97,10 @@ class Neuron:
             self.__func_weights = weights[w_len:w_len + f_len]
 
     def w_len(self):
-        return self.__weights.size
+        return 0 if self.__weights is None else self.__weights.size
 
     def f_len(self):
-        return 0 if self.__func_weights is None else self.__func_weights.size
+        return self.__func_weights_count
 
     def total_len(self):
         return self.w_len() + self.f_len()
@@ -108,6 +113,12 @@ class Neuron:
 
     def get_func_weights(self):
         return None if self.__func_weights is None else _np.array(self.__func_weights)
+
+    def set_input_weights(self, weights):
+        self.__weights = weights
+
+    def set_func_weights(self, weights):
+        self.__func_weights = weights
 
 
 class Layer:

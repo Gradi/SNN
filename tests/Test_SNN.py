@@ -1,13 +1,15 @@
-from SNN import SNN, load_from_json, Neuron, Layer
 import unittest
+
 import numpy as np
 import numpy.testing as np_test
+
+from network.SNN import SNN, load_from_json, Neuron, Layer
 
 
 class TestSNN(unittest.TestCase):
 
     def test_base_creation(self):
-        net = SNN()
+        net = SNN(3)
         neurons = list()
         for i in range(0, 5):
             neurons.append(Neuron("linear", np.array([1.0, 1.0, 1.0])))
@@ -29,7 +31,7 @@ class TestSNN(unittest.TestCase):
         self.assertEqual(net.net_output_len(), 5)
 
     def test_right_output(self):
-        net = SNN()
+        net = SNN(2)
         neurons = list()
         for i in range(0, 5):
             neurons.append(Neuron("linear", np.array([1.0, 1.0])))
@@ -52,7 +54,7 @@ class TestSNN(unittest.TestCase):
         np_test.assert_allclose(real_output, expected_output)
 
     def test_net_fails_on_bad_input_001(self):
-        net = SNN()
+        net = SNN(43)
         neurons = list()
         for i in range(0, 10):
             neurons.append(Neuron("linear", np.random.rand(43)))
@@ -65,7 +67,7 @@ class TestSNN(unittest.TestCase):
         self.assertRaises(NameError, lambda: net.input(input))
 
     def test_net_fails_on_bad_input_002(self):
-        net = SNN()
+        net = SNN(43)
         neurons = list()
         for i in range(0, 10):
             neurons.append(Neuron("linear", np.random.rand(43)))
@@ -78,7 +80,7 @@ class TestSNN(unittest.TestCase):
         self.assertRaises(NameError, lambda: net.input(input))
 
     def test_net_fails_on_bad_input_003(self):
-        net = SNN()
+        net = SNN(43)
         neurons = list()
         for i in range(0, 10):
             neurons.append(Neuron("linear", np.random.rand(43)))
@@ -91,7 +93,7 @@ class TestSNN(unittest.TestCase):
         self.assertRaises(NameError, lambda: net.input(input))
 
     def test_check_bounds_001(self):
-        net = SNN(np.array([-0.5, 0.5]))
+        net = SNN(2, np.array([-0.5, 0.5]))
         neurons = list()
         for i in range(0, 5):
             neurons.append(Neuron("linear", np.array([10.0, 10.0])))
@@ -111,7 +113,7 @@ class TestSNN(unittest.TestCase):
         self.assertEqual(np.equal(net_weights, 0.5).all(), True)
 
     def test_check_bounds_002(self):
-        net = SNN(np.array([-0.5, 0.5]))
+        net = SNN(2, np.array([-0.5, 0.5]))
         neurons = list()
         for i in range(0, 5):
             neurons.append(Neuron("linear", np.array([-10.0, -10.0])))
@@ -131,7 +133,7 @@ class TestSNN(unittest.TestCase):
         self.assertEqual(np.equal(net_weights, -0.5).all(), True)
 
     def test_error(self):
-        net = SNN()
+        net = SNN(3)
         l = Layer()
         for i in range(0, 5):
             l.add_neurons(Neuron("linear", np.array([2.0, 2.0, 2.0])))
@@ -153,7 +155,7 @@ class TestSNN(unittest.TestCase):
         np_test.assert_allclose(real_error, expected_error)
 
     def test_save_to_json_noweights(self):
-        net = SNN()
+        net = SNN(3)
         layer = Layer()
         weights = np.array([1.0, 1.0, 1.0])
         for i in range(0, 50):
@@ -174,7 +176,7 @@ class TestSNN(unittest.TestCase):
             self.assertEqual(neuron.f_len(), 0)
 
     def test_save_to_json_weights(self):
-        net = SNN()
+        net = SNN(3)
         layer = Layer()
         weights = np.array([1.0, 1.0, 1.0])
         for i in range(0, 50):

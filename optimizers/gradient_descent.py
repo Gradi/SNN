@@ -44,7 +44,8 @@ class GradientDescent(BaseOptimizer):
             y = _np.array(y)
             if norm:
                 length = _np.sqrt(_np.sum(y ** 2))
-                y /= length
+                if length != 0:
+                    y /= length
             return y
 
 

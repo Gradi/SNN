@@ -14,31 +14,29 @@ OptSNN = _opt_snn.OptSNN
 
 class SNN:
 
-    def __init__(self, weight_bounds=None, func_bounds=None):
+    def __init__(self, input_count, weight_bounds=(-1.0, 1.0),
+                 func_bounds=(-1.0, 1.0)):
         self.__layers = list()
         self.__test_inputs = None
         self.__test_results = None
         self.__weight_bounds = weight_bounds
         self.__func_bounds = func_bounds
+        self.__input_count = input_count
 
     def set_test_inputs(self, test_inputs, test_results):
         self.__test_inputs = test_inputs
         self.__test_results = test_results
 
     def __mse(self):
-        nn_results = list()
-        for test_input in self.__test_inputs:
-            nn_results.append(self.input(test_input))
-        nn_results = _np.array(nn_results)
+
+        nn_results = self.multi_input(self.__test_inputs)
         if nn_results.size != self.__test_results.size:
             raise NameError("Size of net results({}) != size of test results({})".
                             format(nn_results.size, self.__test_results.size))
 
-        total_sum = _np.zeros(self.net_output_len())
-        for i in range(0, len(nn_results)):
-            total_sum += (nn_results[i] - self.__test_results[i]) ** 2
-        total_sum = _np.sqrt(_np.sum(total_sum) / len(nn_results))
-        return total_sum
+        mse = (nn_results - self.__test_results) ** 2
+        mse = _np.sqrt(_np.sum(mse) / len(nn_results))
+        return mse
 
     def error(self, weights=None):
         if self.__test_inputs is None or self.__test_results is None:
@@ -82,12 +80,27 @@ class SNN:
                                 " output len of previous layer({})".
                                 format(in_len, out_len))
 
+        def init_weights(layer):
+            in_count = self.__input_count if len(self.__layers) == 0 else \
+                       self.__layers[-1].out_len()
+            for neuron in layer:
+                if neuron.w_len() == 0:
+                    w = _fnn.rnd_weights(in_count, self.__weight_bounds)
+                    neuron.set_input_weights(w)
+                if neuron.get_func_weights() is None and\
+                   neuron.f_len() != 0:
+                    w = _fnn.rnd_weights(neuron.f_len(), self.__func_bounds)
+                    neuron.set_func_weights(w)
+
         if type(layer) == Layer:
+            init_weights(layer)
             check_layer(layer)
             self.__layers.append(layer)
-        elif hasattr(layer, "__iter__"):
+        elif hasattr(layer, "__iter__") and\
+             type(layer[0]) == _snn.Layer:
             for l in layer:
                 check_layer(l)
+                init_weights(l)
                 self.__layers.append(l)
         else:
             raise NameError("Unknown type received. Expected Layer or iterable of layer")
@@ -132,6 +145,7 @@ class SNN:
             result["weight_bounds"] = self.__weight_bounds
         if self.__func_bounds is not None:
             result["func_bounds"] = self.__func_bounds
+        result["input_count"] = self.__input_count
         result["layers"] = list()
         for layer in self.__layers:
             layer_dump = list()
@@ -166,35 +180,22 @@ class SNN:
 
 def load_from_json(json_str):
     net_dump = _json.loads(json_str)
-    if "weight_bounds" in net_dump:
-        weight_bounds = net_dump["weight_bounds"]
-    else:
-        weight_bounds = None
-    if "func_bounds" in net_dump:
-        func_bounds = net_dump["func_bounds"]
-    else:
-        func_bounds = None
-    net = SNN(weight_bounds, func_bounds)
+    weight_bounds = net_dump["weight_bounds"]
+    func_bounds = net_dump["func_bounds"]
+    net = SNN(net_dump["input_count"], weight_bounds, func_bounds)
     for layer_dump in net_dump["layers"]:
         layer = Layer()
         for neuron_dump in layer_dump:
             if "weights" in neuron_dump:
                 weights = _np.array(neuron_dump["weights"])
             else:
-                if weight_bounds is not None:
-                    weights = _fnn.rnd_weights(neuron_dump["w_len"], net_dump["weight_bounds"])
-                else:
-                    weights = _fnn.rnd_weights(neuron_dump["w_len"])
+                weights = None
             if "func_weights" in neuron_dump:
                 func_weights = _np.array(neuron_dump["func_weights"])
-            elif neuron_dump["f_len"] != 0:
-                if func_bounds is not None:
-                    func_weights = _fnn.rnd_weights(neuron_dump["f_len"], net_dump["func_bounds"])
-                else:
-                    func_weights = _fnn.rnd_weights(neuron_dump["f_len"])
             else:
                 func_weights = None
-            neuron = Neuron(neuron_dump["func_name"], weights, func_weights)
+            neuron = Neuron(neuron_dump["func_name"], weights, func_weights,
+                            neuron_dump["f_len"])
             layer.add_neurons(neuron)
         net.add_layer(layer)
     return net
