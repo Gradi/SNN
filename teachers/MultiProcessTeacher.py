@@ -6,8 +6,8 @@ import time
 
 import numpy as np
 
-import optimizers
-from network import SNN
+import SNN.optimizers as optimizers
+import SNN
 
 
 class MultiProcessTeacher:

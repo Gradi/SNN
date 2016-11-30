@@ -17,8 +17,6 @@ class TestGradientDescent(unittest.TestCase):
             for i in range(0, 10):
                 print("Gradient descent: Point number %d" % i)
                 start_point = test_functions._rnd_point(d["num"], self.bounds)
-                end_point = gradient_descent.start(d["f"], start_point, self._check_bounds)
-                np_test.assert_allclose(end_point, d["min"], atol=d["atol"])
-
-    def _check_bounds(self, x):
-        test_functions._check_bounds(x, self.bounds)
+                end_point = gradient_descent.start(d["f"], start_point)
+                np_test.assert_allclose(end_point, d["min"], atol=d["atol"],
+                                        err_msg="Start point was %s" % str(start_point))

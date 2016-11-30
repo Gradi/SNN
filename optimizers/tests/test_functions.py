@@ -6,12 +6,12 @@ import numpy as _np
     optimizations.
     _functions is a list which contains
     dictionaries.
-    That dictionaries look like this:
+    Each dictionary looks like this:
     {
         "f": target function,
         "num": size of input vector of f,
         "min": good min point,
-        "bounds": search bounds,
+        "bounds": start point bounds,
         "atol": Maximum difference between
         num minimum and good minimum.
     }
@@ -37,18 +37,11 @@ _functions.append({"f": _simple_function_001, "num": 2,
                    "bounds": (-4.0, 4.0), "atol": 1e-3})
 
 
-def _check_bounds(x, bounds):
-    for i in range(0, len(x)):
-        x[i] = _np.maximum(x[i], bounds[0])
-        x[i] = _np.minimum(x[i], bounds[1])
-
-
 def _rnd_point(num, bounds):
     """
-    Functions which is called from test
+    Function which is called from test
     classes to generate point.
     :param num: size of vector
     :param bounds: bounds in which point is generated
-    :return:
     """
     return bounds[0] + _np.random.rand(num) * (bounds[1] - bounds[0])

@@ -1,7 +1,7 @@
 import matplotlib.pyplot as _plt
 import os as _os
 import numpy as _np
-import core.neuron_functions as _nf
+import SNN.core.neuron_functions as _nf
 import timeit as _timeit
 
 

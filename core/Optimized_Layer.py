@@ -1,6 +1,6 @@
 import numpy as _np
-import core.neuron_functions as _nf
-import core.SNN_core as _snn
+import SNN.core.neuron_functions as _nf
+import SNN.core.SNN_core as _snn
 
 
 class OptimizedLayer:

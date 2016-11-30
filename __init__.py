@@ -1,1 +1,1 @@
-from network.SNN import *
+from SNN.network.SNN import *

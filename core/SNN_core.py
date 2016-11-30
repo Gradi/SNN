@@ -1,6 +1,6 @@
 import numpy as _np
 
-from core import neuron_functions as _nf
+from SNN.core import neuron_functions as _nf
 
 
 class FlatArrayContainer(_np.ndarray):
@@ -120,6 +120,15 @@ class Neuron:
     def set_func_weights(self, weights):
         self.__func_weights = weights
 
+    def copy(self):
+        weights = None
+        func_weights = None
+        if self.__weights is not None:
+            weights = _np.array(weights)
+        if self.__func_weights is not None:
+            func_weights = _np.array(self.__func_weights)
+        return Neuron(self.func_name(), weights, func_weights, self.__func_weights_count)
+
 
 class Layer:
 
@@ -157,3 +166,9 @@ class Layer:
             raise NameError("Neurons have different input length!")
         else:
             return inputs_len[0]
+
+    def copy(self):
+        copy = Layer()
+        for neuron in self:
+            copy.add_neurons(neuron.copy())
+        return copy

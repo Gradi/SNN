@@ -1,6 +1,6 @@
 from numpy.random import rand as _rnd
 
-from core import SNN_core as _snn
+import SNN as _snn
 
 
 def make_neurons(func_name, neuron_count=-1, func_weights_count=0):

@@ -1,5 +1,5 @@
 from numpy import abs, array
-from optimizers.base_optimizer import BaseOptimizer
+from SNN.optimizers.base_optimizer import BaseOptimizer
 
 
 class CoordinateDescent(BaseOptimizer):
@@ -7,7 +7,7 @@ class CoordinateDescent(BaseOptimizer):
         Simple coordinate descent method.
         Attributes:
             h -- step in one direction. (Default: 1.0)
-            h_mul -- multiplier of step(new h = h * h_mul) (Default: 0.7)
+            h_mul -- multiplier of step(new_h = h * h_mul) (Default: 0.7)
             eps -- epsilon (Default: 1e-3)
     """
 
@@ -23,7 +23,7 @@ class CoordinateDescent(BaseOptimizer):
         h = self.__h
         iteration_successful = False
 
-        while iterations < self._maxIter and \
+        while iterations < self._maxIter and\
               (ph is None or iteration_successful or abs(ph - h) > self.__eps):
             ph = h
             iteration_successful = False
@@ -47,22 +47,25 @@ class CoordinateDescent(BaseOptimizer):
                 h *= self.__h_mul
             iterations += 1
             if iteration_successful:
-                self._log.info("[Coordinate Descent] Progress: %5.0f%%."
-                               " Iteration successful.",
+                self._log.info("[Coordinate Descent] Progress: %5.0f%%. "
+                               "Iteration successful.",
                                iterations / self._maxIter * 100)
             else:
-                self._log.info("[Coordinate Descent] Progress: %5.0f%%."
-                               " Bad Iteration. Step progress: %5.0f%%.",
+                self._log.info("[Coordinate Descent] Progress: %5.0f%%. "
+                               "Bad Iteration. Step progress: %5.0f%%.",
                                iterations / self._maxIter * 100,
                                self.__eps / (abs(ph - h)) * 100)
         return x
 
     def __minimize_direction(self, f, x, h):
-        next_x = x + h
-        while f(next_x) < f(x) and abs(f(x) - f(next_x)) > self.__eps:
-            x = next_x
-            next_x += h
-            #self._log.info("[Coordinate Descent] X=%f, error=%f", x, f(x))
+        max_h = h
+        ph = 0
+        while f(x + max_h) < f(x):
+            ph = max_h
+            max_h /= self.__h_mul
+        x += ph
+        while f(x + h) < f(x):
+            x += h
         return x
 
 

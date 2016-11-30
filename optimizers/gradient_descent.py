@@ -1,5 +1,5 @@
 import numpy as _np
-from optimizers.base_optimizer import BaseOptimizer
+from SNN.optimizers.base_optimizer import BaseOptimizer
 
 
 class GradientDescent(BaseOptimizer):

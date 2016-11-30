@@ -3,9 +3,9 @@ import os.path as _path
 import warnings as _wrn
 import numpy as _np
 
-import utils.fast_nn as _fnn
-from core import SNN_core as _snn
-from core import Optimized_SNN as _opt_snn
+import SNN.utils.fast_nn as _fnn
+from SNN.core import SNN_core as _snn
+from SNN.core import Optimized_SNN as _opt_snn
 
 Layer  = _snn.Layer
 Neuron = _snn.Neuron
@@ -23,12 +23,11 @@ class SNN:
         self.__func_bounds = func_bounds
         self.__input_count = input_count
 
-    def set_test_inputs(self, test_inputs, test_results):
-        self.__test_inputs = test_inputs
-        self.__test_results = test_results
+    def set_test_inputs(self, inputs, out):
+        self.__test_inputs = inputs
+        self.__test_results = out
 
     def __mse(self):
-
         nn_results = self.multi_input(self.__test_inputs)
         if nn_results.size != self.__test_results.size:
             raise NameError("Size of net results({}) != size of test results({})".
@@ -70,16 +69,6 @@ class SNN:
 
     def add_layer(self, layer):
 
-        def check_layer(layer):
-            if len(self.__layers) == 0:
-                return
-            out_len = self.__layers[-1].out_len()
-            in_len = layer.in_len()
-            if out_len != in_len:
-                raise NameError("Len of input of new layer({}) !="
-                                " output len of previous layer({})".
-                                format(in_len, out_len))
-
         def init_weights(layer):
             in_count = self.__input_count if len(self.__layers) == 0 else \
                        self.__layers[-1].out_len()
@@ -94,12 +83,10 @@ class SNN:
 
         if type(layer) == Layer:
             init_weights(layer)
-            check_layer(layer)
             self.__layers.append(layer)
         elif hasattr(layer, "__iter__") and\
              type(layer[0]) == _snn.Layer:
             for l in layer:
-                check_layer(l)
                 init_weights(l)
                 self.__layers.append(l)
         else:
@@ -137,14 +124,15 @@ class SNN:
         return self.__layers
 
     def net_output_len(self):
-        return self.__layers[-1].out_len()
+        if len(self.__layers) == 0:
+            return NameError("Network is empty. Don't know output length yet.")
+        else:
+            return self.__layers[-1].out_len()
 
     def to_json(self, with_weights=True):
         result = dict()
-        if self.__weight_bounds is not None:
-            result["weight_bounds"] = self.__weight_bounds
-        if self.__func_bounds is not None:
-            result["func_bounds"] = self.__func_bounds
+        result["weight_bounds"] = self.__weight_bounds
+        result["func_bounds"] = self.__func_bounds
         result["input_count"] = self.__input_count
         result["layers"] = list()
         for layer in self.__layers:
@@ -177,12 +165,19 @@ class SNN:
     def get_func_bounds(self):
         return self.__func_bounds
 
+    def copy(self):
+        copy = SNN(self.__input_count, self.__weight_bounds, self.__func_bounds)
+        for layer in self.layers():
+            copy.add_layer(layer.copy())
+        return copy
+
 
 def load_from_json(json_str):
     net_dump = _json.loads(json_str)
     weight_bounds = net_dump["weight_bounds"]
     func_bounds = net_dump["func_bounds"]
-    net = SNN(net_dump["input_count"], weight_bounds, func_bounds)
+    input_count = net_dump["input_count"]
+    net = SNN(input_count, weight_bounds, func_bounds)
     for layer_dump in net_dump["layers"]:
         layer = Layer()
         for neuron_dump in layer_dump:

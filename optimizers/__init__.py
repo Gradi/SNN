@@ -11,7 +11,7 @@ for file in os.listdir(_path):
        re.search(r".*\.py", file) and \
        file not in _excluded:
         name = file[:-3]
-        module = importlib.import_module("optimizers.{}".format(name))
+        module = importlib.import_module("SNN.optimizers.{}".format(name))
         _methods[module._optimizer_name] = module._class_type
 del _path
 del _excluded

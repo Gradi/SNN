@@ -1,7 +1,7 @@
 import numpy as _np
 
-from core.Optimized_Layer import  OptimizedLayer as _Layer
-from network import SNN as _snn
+from SNN.core.Optimized_Layer import  OptimizedLayer as _Layer
+from SNN.network import SNN as _snn
 
 
 class OptSNN:
