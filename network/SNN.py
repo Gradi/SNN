@@ -14,27 +14,33 @@ OptSNN = _opt_snn.OptSNN
 
 class SNN:
 
-    def __init__(self, input_count, weight_bounds=(-1.0, 1.0),
+    def __init__(self, input_count,
+                 weight_bounds=(-1.0, 1.0),
                  func_bounds=(-1.0, 1.0)):
         self.__layers = list()
+        self.__weights_count = 0
         self.__test_inputs = None
         self.__test_results = None
         self.__weight_bounds = weight_bounds
         self.__func_bounds = func_bounds
         self.__input_count = input_count
+        self.__input_prepared = False
 
     def set_test_inputs(self, inputs, out):
-        self.__test_inputs = inputs
-        self.__test_results = out
+        self.__test_inputs = _np.matrix(inputs).T
+        self.__test_results = _np.matrix(out)
 
     def __mse(self):
-        nn_results = self.multi_input(self.__test_inputs)
+        self.__input_prepared = True
+        nn_results = self.input(self.__test_inputs)
+        self.__input_prepared = False
         if nn_results.size != self.__test_results.size:
-            raise NameError("Size of net results({}) != size of test results({})".
+            raise NameError("Size of net results({}) != "
+                            "size of test results({})".
                             format(nn_results.size, self.__test_results.size))
 
-        mse = (nn_results - self.__test_results) ** 2
-        mse = _np.sqrt(_np.sum(mse) / len(nn_results))
+        mse = _np.square((nn_results - self.__test_results))
+        mse = _np.sqrt(_np.sum(mse) / nn_results.size)
         return mse
 
     def error(self, weights=None):
@@ -45,79 +51,61 @@ class SNN:
         return self.__mse()
 
     def input(self, data):
-        result = data
+        if self.__input_prepared:
+            result = data
+        else:
+            result = _np.matrix(data, copy=False).T
+
         for layer in self.__layers:
             result = layer.input(result)
-        if self.net_output_len() == 1:
-            return result[0]
+
+        if result.size == 1:
+            return result.A1[0]
+        elif self.net_output_len() == 1:
+            return result.A1
         else:
             return result
 
-    def multi_input(self, data):
-        result = list()
-        for d in data:
-            result.append(self.input(d))
-        return _np.array(result)
-
     def set_weights(self, weights):
+        assert weights.size == self.__weights_count
+
         total = 0
         for layer in self.__layers:
-            for neuron in layer:
-                c_len = neuron.total_len()
-                neuron.set_weights(weights[total:total+c_len])
-                total += c_len
+            layer.set_weights(weights[total:total + layer.weights_count])
+            total += layer.weights_count
 
     def add_layer(self, layer):
-
-        def init_weights(layer):
-            in_count = self.__input_count if len(self.__layers) == 0 else \
-                       self.__layers[-1].out_len()
-            for neuron in layer:
-                if neuron.w_len() == 0:
-                    w = _fnn.rnd_weights(in_count, self.__weight_bounds)
-                    neuron.set_input_weights(w)
-                if neuron.get_func_weights() is None and\
-                   neuron.f_len() != 0:
-                    w = _fnn.rnd_weights(neuron.f_len(), self.__func_bounds)
-                    neuron.set_func_weights(w)
-
         if type(layer) == Layer:
-            init_weights(layer)
-            self.__layers.append(layer)
+           self.__init_weights(layer)
+           self.__weights_count += layer.weights_count
+           self.__layers.append(layer)
         elif hasattr(layer, "__iter__") and\
-             type(layer[0]) == _snn.Layer:
+             type(layer[0]) == Layer:
             for l in layer:
-                init_weights(l)
+                self.__init_weights(l)
+                self.__weights_count += l.weights_count
                 self.__layers.append(l)
         else:
-            raise NameError("Unknown type received. Expected Layer or iterable of layer")
+            raise NameError("Unknown type received. "
+                            "Expected Layer or iterable of layer")
 
-    def check_bounds(self, weights):
-        if self.__weight_bounds is None and self.__func_bounds is None:
-            _wrn.warn("Tried to check non existing bounds.")
-            return
-
-        total = 0
-        for layer in self.__layers:
-            for neuron in layer:
-                w_len = neuron.w_len()
-                f_len = neuron.f_len()
-
-                if self.__weight_bounds is not None:
-                    weights[total:total+w_len] = _np.maximum(weights[total:total+w_len], self.__weight_bounds[0])
-                    weights[total:total+w_len] = _np.minimum(weights[total:total+w_len], self.__weight_bounds[1])
-                if self.__func_bounds is not None:
-                    weights[total+w_len:total+w_len+f_len] = _np.maximum(weights[total+w_len:total+w_len+f_len],
-                                                                               self.__func_bounds[0])
-                    weights[total+w_len:total+w_len+f_len] = _np.minimum(weights[total+w_len:total+w_len+f_len],
-                                                                               self.__func_bounds[1])
-                total += w_len + f_len
+    def __init_weights(self, layer):
+        input_count = self.__input_count if len(self.__layers) == 0\
+                      else self.__layers[-1].out_len()
+        for neuron in layer:
+            if neuron.w_len() == 0:
+                w = _fnn.rnd_weights(input_count, self.__weight_bounds)
+                neuron.set_input_weights(w)
+            if neuron.get_func_weights is None and\
+               neuron.f_len() != 0:
+                f = _fnn.rnd_weights(neuron.f_len(), self.__func_bounds)
+                neuron.set_func_weights(f)
+        layer.init_layer()
 
     def get_weights(self):
         result = _np.array([])
         for layer in self.__layers:
-            for neuron in layer:
-                result = _np.append(result, neuron.get_weights())
+            result = _np.append(result, layer.get_weights())
         return result
 
     def layers(self):

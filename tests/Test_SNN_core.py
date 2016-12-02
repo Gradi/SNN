@@ -136,11 +136,6 @@ class TestNeuron(unittest.TestCase):
         self.assertEqual(n.w_len(), w_len)
         self.assertEqual(n.f_len(), f_len)
 
-        all_weights = np.array([])
-        all_weights = np.append(all_weights, weights)
-        all_weights = np.append(all_weights, func_weights)
-
-        np_tests.assert_array_equal(n.get_weights(), all_weights)
         np_tests.assert_array_equal(n.get_input_weights(), weights)
         np_tests.assert_array_equal(n.get_func_weights(), func_weights)
 
@@ -149,40 +144,10 @@ class TestNeuron(unittest.TestCase):
     def test_neuron_returs_right_output(self):
         weights = np.array([1.0, 1.0, 1.0])
         inputs = np.array([3.0, 3.0, 3.0])
-        n = snn.Neuron("linear", weights)
-        output = n.input(inputs)
+        n = snn.Neuron("cubic", weights)
+        output = n.activate(np.sum(weights * inputs))
 
-        np_tests.assert_allclose(output, 9.0)
-
-    def test_neuron_fails_on_bad_inputs_001(self):
-        weights = np.linspace(1, 10, 10)
-        n = snn.Neuron("linear", weights)
-        inputs = np.linspace(1, 10, 50)
-
-        self.assertRaises(NameError, lambda: n.input(inputs))
-
-    def test_neuron_fails_on_bad_inputs_002(self):
-        weights = np.linspace(1, 10, 50)
-        n = snn.Neuron("linear", weights)
-        inputs = np.linspace(1, 10, 10)
-
-        self.assertRaises(NameError, lambda: n.input(inputs))
-
-    def test_neuron_fails_on_bad_inputs_003(self):
-        weights = np.linspace(1, 10, 10)
-        n = snn.Neuron("linear", weights)
-        inputs = list()
-        for i in range(0, 10):
-            inputs.append(np.random.rand(10))
-        inputs = np.array(inputs)
-
-        self.assertRaises(NameError, lambda: n.input(inputs))
-
-    def test_neuron_returns_all_weights(self):
-        weights = np.linspace(1, 10, 10)
-        neuron = snn.Neuron("linear", weights[0:5], weights[5:10])
-        real_weights = neuron.get_weights()
-        np_tests.assert_array_equal(real_weights, weights)
+        np_tests.assert_allclose(output, 729.0)
 
 
 class TestLayer(unittest.TestCase):
@@ -193,6 +158,7 @@ class TestLayer(unittest.TestCase):
             neurons.append(snn.Neuron("linear", np.random.rand(43)))
         l = snn.Layer()
         l.add_neurons(neurons)
+        l.init_layer()
 
         self.assertEqual(l.out_len(), 10)
         self.assertEqual(l.in_len(), 43)
@@ -211,50 +177,54 @@ class TestLayer(unittest.TestCase):
 
         l = snn.Layer()
         l.add_neurons(neurons)
+        l.init_layer()
 
-        input = np.zeros(input_len, dtype=np.float64)
+        input = np.zeros(input_len, dtype=np.float64).reshape(input_len, 1)
         input.fill(2.0)
 
         expected_output = 2.0 * input_len
         expected_array = np.zeros(neuron_count, dtype=np.float64)
         expected_array.fill(expected_output)
 
-        real_array = l.input(input)
+        real_array = l.input(input).A1
 
         np_tests.assert_allclose(real_array,  expected_array)
 
-    def test_layer_faild_on_bad_input_001(self):
+    def test_layer_fails_on_bad_input_001(self):
         neurons = list()
         for i in range(0, 148):
             neurons.append(snn.Neuron("linear", np.random.rand(44)))
 
         l = snn.Layer()
         l.add_neurons(neurons)
+        l.init_layer()
 
         input = np.linspace(0, 1, 30)
 
-        self.assertRaises(NameError, lambda: l.input(input))
+        self.assertRaises(ValueError, lambda: l.input(input))
 
-    def test_layer_faild_on_bad_input_002(self):
+    def test_layer_fails_on_bad_input_002(self):
         neurons = list()
         for i in range(0, 148):
             neurons.append(snn.Neuron("linear", np.random.rand(44)))
 
         l = snn.Layer()
         l.add_neurons(neurons)
+        l.init_layer()
 
         input = np.linspace(0, 1, 45)
 
-        self.assertRaises(NameError, lambda: l.input(input))
+        self.assertRaises(ValueError, lambda: l.input(input))
 
-    def test_layer_faild_on_bad_input_003(self):
+    def test_layer_fails_on_bad_input_003(self):
         neurons = list()
         for i in range(0, 148):
             neurons.append(snn.Neuron("linear", np.random.rand(44)))
 
         l = snn.Layer()
         l.add_neurons(neurons)
+        l.init_layer()
 
         input = np.array([])
 
-        self.assertRaises(NameError, lambda: l.input(input))
+        self.assertRaises(ValueError, lambda: l.input(input))

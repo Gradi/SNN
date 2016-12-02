@@ -54,47 +54,19 @@ class Neuron:
         self.__weights = weights
         self.__func_weights = func_weights
         self.__func_name = func_name
-        self.__func = None
-        self.__input_sum = 0.0
+        self.__func = _nf.get(func_name)
         if func_weights is not None:
             self.__func_weights_count = len(func_weights)
         else:
             self.__func_weights_count = func_weights_count
 
-    def input(self, inputs):
-        if inputs.size != self.w_len():
-            raise NameError("Len of inputs({}) != len of weights({})."
-                            .format(inputs.size, self.w_len()))
-        if self.__func is None:
-            self.__func = _nf.get(self.__func_name)
-
-        self.__input_sum = _np.sum(inputs * self.__weights)
-        if self.__func_weights is None:
-            return self.__func(self.__input_sum)
+    def activate(self, input_sum):
+        if self.__func_weights is not None:
+            return self.__func(input_sum, self.__func_weights)
+        elif self.__func_weights_count != 0:
+            raise NameError("Non initialized neuron: func weights isn't set!")
         else:
-            return self.__func(self.__input_sum, self.__func_weights)
-
-    def get_weights(self):
-        if self.__func_weights is None:
-            return _np.array(self.__weights)
-        else:
-            result = _np.zeros(self.total_len(), dtype=_np.float64)
-            result[0:self.w_len()] = _np.array(self.__weights)
-            result[self.w_len():] = _np.array(self.__func_weights)
-            return result
-
-    def set_weights(self, weights):
-        if self.total_len() != weights.size:
-            raise NameError("Len of new weights({}) != len of old weights({})".
-                            format(weights.size, self.total_len()))
-
-        if self.__func_weights is None:
-            self.__weights = weights
-        else:
-            w_len = self.w_len()
-            f_len = self.f_len()
-            self.__weights = weights[0:w_len]
-            self.__func_weights = weights[w_len:w_len + f_len]
+            return self.__func(input_sum)
 
     def w_len(self):
         return 0 if self.__weights is None else self.__weights.size
@@ -109,7 +81,10 @@ class Neuron:
         return self.__func_name
 
     def get_input_weights(self):
-        return _np.array(self.__weights)
+        if self.__weights is None:
+            raise NameError("Attempt to retrieve weights from non initialized neuron!")
+        else:
+            return _np.array(self.__weights)
 
     def get_func_weights(self):
         return None if self.__func_weights is None else _np.array(self.__func_weights)
@@ -118,7 +93,7 @@ class Neuron:
         self.__weights = weights
 
     def set_func_weights(self, weights):
-        self.__func_weights = weights
+         self.__func_weights = weights
 
     def copy(self):
         weights = None
@@ -134,41 +109,79 @@ class Layer:
 
     def __init__(self):
         self.__neurons = list()
+        self.weights_count = 0
+        self.__W = None
 
     def add_neurons(self, neuron):
-        if hasattr(neuron, "__iter__"):
+        if hasattr(neuron, "__iter__") and\
+           type(neuron[0]) == Neuron:
             for n in neuron:
                 self.__neurons.append(n)
-        else:
+        elif type(neuron) == Neuron:
             self.__neurons.append(neuron)
+        else:
+            raise ValueError("Expected neuron or iterator of neurons.")
 
     def __iter__(self):
-        return iter(self.__neurons)
+        if self.__W is None:
+            return iter(self.__neurons)
+        else:
+            return self.__neuron_generator()
 
-    def input(self, input_data):
-        results = _np.zeros(self.out_len())
-        i = 0
-        for neuron in self:
-            output = neuron.input(input_data)
-            results[i] = output
-            i += 1
-        return results
+    def __neuron_generator(self):
+        for ri in range(0, self.out_len()):
+            weights = _np.array(self.__W[ri].A1)
+            neuron = self.__neurons[ri]
+            neuron.set_input_weights(weights)
+            yield neuron
+
+    def input(self, input):
+        result = self.__W * input
+        for ri in range(0, len(self.__neurons)):
+            result[ri] = self.__neurons[ri].activate(result[ri])
+        return result
 
     def out_len(self):
-        return len(self.__neurons)
+        if self.__W is None:
+            raise NameError("Layer is not initialized.")
+        else:
+            return self.__W.shape[0]
 
     def in_len(self):
-        inputs_len = list()
-        for neuron in self:
-            inputs_len.append(neuron.w_len())
-        inputs_len = _np.array(inputs_len)
-        if not _np.equal(inputs_len, inputs_len[0]).all():
-            raise NameError("Neurons have different input length!")
+        if self.__W is None:
+            raise NameError("Layer is not initialized.")
         else:
-            return inputs_len[0]
+            return self.__W.shape[1]
 
     def copy(self):
         copy = Layer()
         for neuron in self:
             copy.add_neurons(neuron.copy())
         return copy
+
+    def get_weights(self):
+        res = _np.array(self.__W.A1)
+        for neuron in self.__neurons:
+            if neuron.f_len() != 0:
+                res = _np.append(neuron.get_func_weights())
+        return res
+
+    def set_weights(self, weights):
+        W = weights[0:self.__W.size].reshape(self.__W.shape)
+        self.__W = _np.matrix(W, copy=False)
+        if self.__W.size != weights.size:
+            total = 0
+            func_weights = weights[self.__W.size:]
+            for neuron in self.__neurons:
+                f_len = neuron.f_len()
+                if f_len != 0:
+                    neuron.set_func_weights(func_weights[total:total + f_len])
+                    total += f_len
+
+    def init_layer(self):
+        self.__W = _np.matrix(self.__neurons[0].get_input_weights())
+        self.weights_count += self.__neurons[0].total_len()
+        for neuron in self.__neurons[1:]:
+            self.__W = _np.vstack((self.__W, neuron.get_input_weights()))
+            self.weights_count += neuron.total_len()
+

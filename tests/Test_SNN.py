@@ -64,7 +64,7 @@ class TestSNN(unittest.TestCase):
 
         input = np.random.rand(42)
 
-        self.assertRaises(NameError, lambda: net.input(input))
+        self.assertRaises(ValueError, lambda: net.input(input))
 
     def test_net_fails_on_bad_input_002(self):
         net = SNN(43)
@@ -77,7 +77,7 @@ class TestSNN(unittest.TestCase):
 
         input = np.random.rand(44)
 
-        self.assertRaises(NameError, lambda: net.input(input))
+        self.assertRaises(ValueError, lambda: net.input(input))
 
     def test_net_fails_on_bad_input_003(self):
         net = SNN(43)
@@ -90,47 +90,7 @@ class TestSNN(unittest.TestCase):
 
         input = np.array([])
 
-        self.assertRaises(NameError, lambda: net.input(input))
-
-    def test_check_bounds_001(self):
-        net = SNN(2, np.array([-0.5, 0.5]))
-        neurons = list()
-        for i in range(0, 5):
-            neurons.append(Neuron("linear", np.array([10.0, 10.0])))
-        l = Layer()
-        l.add_neurons(neurons)
-        net.add_layer(l)
-
-        l = Layer()
-        neurons = list()
-        for i in range(0, 5):
-            neurons.append(Neuron("linear", np.array([10.0, 10.0, 10.0, 10.0, 10.0])))
-        l.add_neurons(neurons)
-        net.add_layer(l)
-
-        net_weights = net.get_weights()
-        net.check_bounds(net_weights)
-        self.assertEqual(np.equal(net_weights, 0.5).all(), True)
-
-    def test_check_bounds_002(self):
-        net = SNN(2, np.array([-0.5, 0.5]))
-        neurons = list()
-        for i in range(0, 5):
-            neurons.append(Neuron("linear", np.array([-10.0, -10.0])))
-        l = Layer()
-        l.add_neurons(neurons)
-        net.add_layer(l)
-
-        l = Layer()
-        neurons = list()
-        for i in range(0, 5):
-            neurons.append(Neuron("linear", np.array([-10.0, -10.0, -10.0, -10.0, -10.0])))
-        l.add_neurons(neurons)
-        net.add_layer(l)
-
-        net_weights = net.get_weights()
-        net.check_bounds(net_weights)
-        self.assertEqual(np.equal(net_weights, -0.5).all(), True)
+        self.assertRaises(ValueError, lambda: net.input(input))
 
     def test_error(self):
         net = SNN(3)

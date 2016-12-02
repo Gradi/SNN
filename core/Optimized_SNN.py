@@ -62,7 +62,7 @@ class OptSNN:
         if x.size == 1:
             return x.A1[0]
         else:
-            return x.A1
+            return x
 
     def __mse(self):
         if self.__test_inputs is None and \
@@ -74,7 +74,7 @@ class OptSNN:
         self.__input_is_prepared = False
         assert nn_results.size == self.__test_outputs.size
 
-        mse = (nn_results - self.__test_outputs) ** 2
+        mse = _np.square((nn_results - self.__test_outputs))
         mse = _np.sqrt(_np.sum(mse) / nn_results.size)
         return mse
 
