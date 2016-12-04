@@ -1,4 +1,4 @@
-from numpy import abs, array
+from numpy import abs, array, isinf
 from SNN.optimizers.base_optimizer import BaseOptimizer
 
 

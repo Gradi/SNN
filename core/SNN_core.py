@@ -163,7 +163,7 @@ class Layer:
         res = _np.array(self.__W.A1)
         for neuron in self.__neurons:
             if neuron.f_len() != 0:
-                res = _np.append(neuron.get_func_weights())
+                res = _np.append(res, neuron.get_func_weights())
         return res
 
     def set_weights(self, weights):

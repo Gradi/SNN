@@ -96,7 +96,7 @@ class SNN:
             if neuron.w_len() == 0:
                 w = _fnn.rnd_weights(input_count, self.__weight_bounds)
                 neuron.set_input_weights(w)
-            if neuron.get_func_weights is None and\
+            if neuron.get_func_weights() is None and\
                neuron.f_len() != 0:
                 f = _fnn.rnd_weights(neuron.f_len(), self.__func_bounds)
                 neuron.set_func_weights(f)

@@ -92,10 +92,11 @@ def _worker_main(task, result_queue):
         logging.basicConfig(**logging_config)
     else:
         logging.disable(logging.CRITICAL)
+
     result_dir = task["result_dir"]
-    snn = SNN.load_from_json(task["net_json"])
-    network = SNN.OptSNN(snn)
-    network.set_test_data(task["test_data"]["x"], task["test_data"]["y"])
+
+    network = SNN.load_from_json(task["net_json"])
+    network.set_test_inputs(task["test_data"]["x"], task["test_data"]["y"])
     weights = network.get_weights()
     for opt in task["optimizers"]:
         log.info("Running \"%s\" with %s parameters.",
@@ -103,12 +104,12 @@ def _worker_main(task, result_queue):
         optimizer = optimizers.get_method_class(opt["name"])(opt.get("params", {}))
         weights = optimizer.start(network.error, weights)
         log.info("Optimizer \"%s\" has completed.", opt["name"])
+
     log.info("All %d optimizers have completed.",
              len(task["optimizers"]))
     filename = path.join(result_dir, "tmp_weights_{}.npz"
                          .format(mp.current_process().pid))
-    good_weights = network.to_simple_snn().get_weights()
-    np.savez_compressed(filename, weights=good_weights)
+    np.savez_compressed(filename, weights=weights)
     log.info("Saved current weights to \"%s\"", filename)
     result = dict()
     result["error"] = network.error()
