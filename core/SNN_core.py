@@ -99,7 +99,7 @@ class Neuron:
         weights = None
         func_weights = None
         if self.__weights is not None:
-            weights = _np.array(weights)
+            weights = _np.array(self.__weights)
         if self.__func_weights is not None:
             func_weights = _np.array(self.__func_weights)
         return Neuron(self.func_name(), weights, func_weights, self.__func_weights_count)

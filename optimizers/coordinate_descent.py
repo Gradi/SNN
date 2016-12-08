@@ -1,4 +1,4 @@
-from numpy import abs, array, isinf
+from numpy import abs, array
 from SNN.optimizers.base_optimizer import BaseOptimizer
 
 
@@ -60,12 +60,26 @@ class CoordinateDescent(BaseOptimizer):
     def __minimize_direction(self, f, x, h):
         max_h = h
         ph = 0
-        while f(x + max_h) < f(x):
+        f_next = f(x + max_h)
+        prev_f_next = None
+        f_x = f(x)
+
+        while f_next < f_x and\
+              (prev_f_next is None or abs(prev_f_next - f_next) > self.__eps):
+            prev_f_next = f_next
             ph = max_h
             max_h /= self.__h_mul
+            f_next = f(x + max_h)
+
         x += ph
-        while f(x + h) < f(x):
+        f_x = f(x)
+        f_next = f(x + h)
+        prev_f_next = None
+        while f_next < f_x and\
+              (prev_f_next is None or abs(prev_f_next - f_next) > self.__eps):
+            prev_f_next = f_next
             x += h
+            f_next = f(x)
         return x
 
 

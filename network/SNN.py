@@ -76,12 +76,14 @@ class SNN:
 
     def add_layer(self, layer):
         if type(layer) == Layer:
-           self.__init_weights(layer)
-           self.__weights_count += layer.weights_count
-           self.__layers.append(layer)
+            layer = layer.copy()
+            self.__init_weights(layer)
+            self.__weights_count += layer.weights_count
+            self.__layers.append(layer)
         elif hasattr(layer, "__iter__") and\
              type(layer[0]) == Layer:
             for l in layer:
+                l = l.copy()
                 self.__init_weights(l)
                 self.__weights_count += l.weights_count
                 self.__layers.append(l)
