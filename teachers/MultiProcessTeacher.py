@@ -46,7 +46,31 @@ class MultiProcessTeacher:
                 self.__task["logging_config"] = logging_config
         self.__log.info("There will be %d processes.", self.__process_num)
 
-    def teach(self):
+    def teach(self, nb_epoch=None, eps=None):
+        if nb_epoch is None and eps is None:
+            return self.__teach()
+
+        epochs_ended = False
+        epochs_count = 0
+        eps_reached = False
+        best_result = None
+        while not epochs_ended and not eps_reached:
+            res = self.__teach()
+            if best_result is None or res["error"] < best_result["error"]:
+                best_result = res
+            self.__log.info("Current error: %f, best error: %f", res["error"],
+                            best_result["error"])
+            if nb_epoch is not None:
+                epochs_count += 1
+                self.__log.info("Epoch: %d/%d (%3.2f%%)", epochs_count, nb_epoch,
+                                epochs_count / nb_epoch * 100)
+                if epochs_count >= nb_epoch:
+                    epochs_ended = True
+            if eps is not None:
+                eps_reached = best_result["error"] <= eps
+        return best_result
+
+    def __teach(self):
         start_time = time.perf_counter()
         self.__log.info("Starting teaching...")
         result_dir = tempfile.TemporaryDirectory()
@@ -100,7 +124,7 @@ def _worker_main(task, result_queue):
     weights = network.get_weights()
     for opt in task["optimizers"]:
         log.info("Running \"%s\" with %s parameters.",
-                 opt["name"], opt["params"])
+                 opt["name"], opt.get("params", {}))
         optimizer = optimizers.get_method_class(opt["name"])(opt.get("params", {}))
         weights = optimizer.start(network.error, weights)
         log.info("Optimizer \"%s\" has completed.", opt["name"])
