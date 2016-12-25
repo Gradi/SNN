@@ -5,18 +5,18 @@ import unittest
 import numpy.testing as np_test
 
 
-class TestCoordinateDescent(unittest.TestCase):
+class TestRandomSearch(unittest.TestCase):
 
     def setUp(self):
-        self.cd = snn.optimizers.get_method_class("coordinate_descent")
+        self.rs = snn.optimizers.get_method_class("random_search")
 
-    def test_cd(self):
+    def test_rs(self):
         for d in test_functions._functions:
             self.bounds = d["bounds"]
-            cd = self.cd(eps=1e-20, maxIter=20000, h=0.5)
+            rs = self.rs()
             for i in range(0, 10):
-                print("Coordinate descent: Point number %d" % i)
+                print("Random search: Point number %d" % i)
                 start_point = test_functions._rnd_point(d["num"], self.bounds)
-                end_point = cd.start(d["f"], start_point)
+                end_point = rs.start(d["f"], start_point)
                 np_test.assert_allclose(end_point, d["min"], atol=d["atol"],
                                         err_msg="Start point was: {}".format(start_point))

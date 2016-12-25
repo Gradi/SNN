@@ -11,11 +11,11 @@ class CoordinateDescent(BaseOptimizer):
             eps -- epsilon (Default: 1e-3)
     """
 
-    def __init__(self, params={}):
-        super().__init__(params)
-        self.__h = params.get("h", 1.0)
-        self.__h_mul = params.get("h_mul", 0.7)
-        self.__eps = params.get("eps", 1e-3)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.__h = kwargs.get("h", 1.0)
+        self.__h_mul = kwargs.get("h_mul", 0.7)
+        self.__eps = kwargs.get("eps", 1e-3)
 
     def start(self, f, x):
         iterations = 0
@@ -60,26 +60,16 @@ class CoordinateDescent(BaseOptimizer):
     def __minimize_direction(self, f, x, h):
         max_h = h
         ph = 0
-        f_next = f(x + max_h)
-        prev_f_next = None
-        f_x = f(x)
+        fx = f(x)
 
-        while f_next < f_x and\
-              (prev_f_next is None or abs(prev_f_next - f_next) > self.__eps):
-            prev_f_next = f_next
+        while f(x + max_h) < fx:
             ph = max_h
             max_h /= self.__h_mul
-            f_next = f(x + max_h)
 
         x += ph
-        f_x = f(x)
-        f_next = f(x + h)
-        prev_f_next = None
-        while f_next < f_x and\
-              (prev_f_next is None or abs(prev_f_next - f_next) > self.__eps):
-            prev_f_next = f_next
+        fx = f(x)
+        while f(x + h) < fx:
             x += h
-            f_next = f(x)
         return x
 
 

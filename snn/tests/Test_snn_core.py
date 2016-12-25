@@ -141,7 +141,7 @@ class TestNeuron(unittest.TestCase):
 
         self.assertEqual(n.func_name(), "linear")
 
-    def test_neuron_returs_right_output(self):
+    def test_neuron_returns_right_output(self):
         weights = np.array([1.0, 1.0, 1.0])
         inputs = np.array([3.0, 3.0, 3.0])
         n = snn.Neuron("cubic", weights)

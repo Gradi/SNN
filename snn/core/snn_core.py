@@ -64,7 +64,7 @@ class Neuron:
         if self.__func_weights is not None:
             return self.__func(input_sum, self.__func_weights)
         elif self.__func_weights_count != 0:
-            raise NameError("Non initialized neuron: func weights isn't set!")
+            raise NameError("Non initialized neuron: func weights aren't set!")
         else:
             return self.__func(input_sum)
 

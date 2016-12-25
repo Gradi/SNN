@@ -12,19 +12,15 @@ import snn
 
 class MultiProcessTeacher:
 
-    def __init__(self, optimizers,
-                 network,
-                 test_data,
+    def __init__(self,
+                 opt_manager,
                  process_num=-1,
                  logging_config=None):
         """
 
-        :param optimizers: dictionary of optimizers which this teacher will use
-         for minimizing an error function. Format: {"name:" <name-of-optimizer>,
-                                                    "params": {<params>}}
+        :param opt_manager: Instance of OptManager class.
         :param network: Instance of SNN object which should be taught.
-        :param test_data: Test inputs for net. Format: {"x": <inputs>, "y": <outputs>
-        :param process_num: Number of process. If not set defaults to cpu_count()
+        :param process_num: Number of process. If not set defaults to cpu_count().
         :param logging_config: Logging config for loggind.basicConfig() function.
                 If not set then no logs will be produced by child processes.
                 If set to "default" then default log config will be used.
@@ -36,9 +32,7 @@ class MultiProcessTeacher:
             self.__process_num = process_num
         self.__result_queue = mp.Queue()
         self.__task = dict()
-        self.__task["optimizers"] = optimizers
-        self.__task["net_json"] = network.to_json(with_weights=False)
-        self.__task["test_data"] = test_data
+        self.__task["opt_manager"] = optimizers
         if logging_config is not None:
             if logging_config == "default":
                 self.__task["logging_config"] = {"format": "[%(asctime)s] %(levelname)s: %(message)s", "level": logging.NOTSET}
@@ -46,18 +40,27 @@ class MultiProcessTeacher:
                 self.__task["logging_config"] = logging_config
         self.__log.info("There will be %d processes.", self.__process_num)
 
-    def teach(self, nb_epoch=None, eps=None):
+    def teach(self, network, test_data, nb_epoch=None, eps=None,
+              backup_filename=None):
+        network = network.copy()
         if nb_epoch is None and eps is None:
-            return self.__teach()
+            res = self.__teach(network, test_data)
+            network.set_weights(res["weights"])
+            return network, res["error"]
 
         epochs_ended = False
         epochs_count = 0
         eps_reached = False
         best_result = None
+
         while not epochs_ended and not eps_reached:
             res = self.__teach()
             if best_result is None or res["error"] < best_result["error"]:
                 best_result = res
+                if backup_filename is not None:
+                    network.set_weights(best_result["weights"])
+                    network.save_to_file(backup_filename)
+
             self.__log.info("Current error: %f, best error: %f", res["error"],
                             best_result["error"])
             if nb_epoch is not None:
@@ -68,11 +71,14 @@ class MultiProcessTeacher:
                     epochs_ended = True
             if eps is not None:
                 eps_reached = best_result["error"] <= eps
-        return best_result
+        network.set_weights(best_result["weights"])
+        return network, best_result["error"]
 
-    def __teach(self):
+    def __teach(self, network, test_data):
         start_time = time.perf_counter()
         self.__log.info("Starting teaching...")
+        self.__task["net_json"] = network.save_to_json()
+        self.__task["test_data"] = test_data
         result_dir = tempfile.TemporaryDirectory()
         self.__log.info("Temporary dir is: %s", result_dir.name)
         self.__task["result_dir"] = result_dir.name
@@ -122,15 +128,12 @@ def _worker_main(task, result_queue):
     network = snn.load_from_json(task["net_json"])
     network.set_test_inputs(task["test_data"]["x"], task["test_data"]["y"])
     weights = network.get_weights()
-    for opt in task["optimizers"]:
-        log.info("Running \"%s\" with %s parameters.",
-                 opt["name"], opt.get("params", {}))
-        optimizer = optimizers.get_method_class(opt["name"])(opt.get("params", {}))
-        weights = optimizer.start(network.error, weights)
-        log.info("Optimizer \"%s\" has completed.", opt["name"])
+    for opt in task["opt_manager"]:
+        log.info("Running \"%s\".", type(opt).__name__)
+        weights = opt.start(network.error, weights)
+        log.info("Optimizer \"%s\" has completed.", type(opt).__name__)
 
-    log.info("All %d optimizers have completed.",
-             len(task["optimizers"]))
+    log.info("Ran all the optimizers.")
     filename = path.join(result_dir, "tmp_weights_{}.npz"
                          .format(mp.current_process().pid))
     np.savez_compressed(filename, weights=weights)

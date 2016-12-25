@@ -13,7 +13,7 @@ class TestGradientDescent(unittest.TestCase):
     def test_gd(self):
         for d in test_functions._functions:
             self.bounds = d["bounds"]
-            gradient_descent = self.gd({"maxIter": 10000})
+            gradient_descent = self.gd(maxIter=10000)
             for i in range(0, 10):
                 print("Gradient descent: Point number %d" % i)
                 start_point = test_functions._rnd_point(d["num"], self.bounds)

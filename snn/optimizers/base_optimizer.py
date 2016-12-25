@@ -8,13 +8,13 @@ class BaseOptimizer:
         all general parameters of all optimizers and
         for setting up logger.
         Attributes:
-            maxIter -- maximum number of iterations. (Default: 200)
+            maxIter -- maximum number of iterations. (Default: 5000)
 
         Currently there is no any other general parameters.
     """
 
-    def __init__(self, params={}):
-        self._maxIter = params.get("maxIter", 200)
+    def __init__(self, **kwargs):
+        self._maxIter = kwargs.get("maxIter", 5000)
         self._log = logging.getLogger("optimizers.base_optimizer")
 
     def start(self, f, x):

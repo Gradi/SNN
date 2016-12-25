@@ -10,10 +10,10 @@ class GradientDescent(BaseOptimizer):
             h_mul -- value which is multiplier for step(new_h = h * h_mul) (Default: 0.5).
     """
 
-    def __init__(self, params={}):
-        super().__init__(params)
-        self.__h = params.get("h", 1)
-        self.__h_mul = params.get("h_mul", 0.5)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.__h = kwargs.get("h", 1)
+        self.__h_mul = kwargs.get("h_mul", 0.5)
 
     def start(self, f, x):
         x = _np.array(x)
