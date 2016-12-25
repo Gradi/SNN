@@ -6,7 +6,7 @@ import time
 
 import numpy as np
 
-import snn.optimizers as optimizers
+from snn.optimizers.optimizer_manager import OptManager
 import snn
 
 
@@ -32,7 +32,7 @@ class MultiProcessTeacher:
             self.__process_num = process_num
         self.__result_queue = mp.Queue()
         self.__task = dict()
-        self.__task["opt_manager"] = optimizers
+        self.__task["opt_manager"] = opt_manager
         if logging_config is not None:
             if logging_config == "default":
                 self.__task["logging_config"] = {"format": "[%(asctime)s] %(levelname)s: %(message)s", "level": logging.NOTSET}
@@ -54,7 +54,7 @@ class MultiProcessTeacher:
         best_result = None
 
         while not epochs_ended and not eps_reached:
-            res = self.__teach()
+            res = self.__teach(network, test_data)
             if best_result is None or res["error"] < best_result["error"]:
                 best_result = res
                 if backup_filename is not None:
@@ -77,7 +77,7 @@ class MultiProcessTeacher:
     def __teach(self, network, test_data):
         start_time = time.perf_counter()
         self.__log.info("Starting teaching...")
-        self.__task["net_json"] = network.save_to_json()
+        self.__task["net_json"] = network.to_json(False)
         self.__task["test_data"] = test_data
         result_dir = tempfile.TemporaryDirectory()
         self.__log.info("Temporary dir is: %s", result_dir.name)
