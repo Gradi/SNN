@@ -1,5 +1,5 @@
-import optimizers
-import optimizers.tests.test_functions as test_functions
+import snn.optimizers
+import snn.optimizers.tests.test_functions as test_functions
 
 import unittest
 import numpy.testing as np_test
@@ -8,7 +8,7 @@ import numpy.testing as np_test
 class TestCoordinateDescent(unittest.TestCase):
 
     def setUp(self):
-        self.cd = optimizers.get_method_class("coordinate_descent")
+        self.cd = snn.optimizers.get_method_class("coordinate_descent")
 
     def test_cd(self):
         for d in test_functions._functions:

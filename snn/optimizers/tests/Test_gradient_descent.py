@@ -1,5 +1,5 @@
-import optimizers
-import optimizers.tests.test_functions as test_functions
+import snn.optimizers
+import snn.optimizers.tests.test_functions as test_functions
 
 import unittest
 import numpy.testing as np_test
@@ -8,7 +8,7 @@ import numpy.testing as np_test
 class TestGradientDescent(unittest.TestCase):
 
     def setUp(self):
-        self.gd = optimizers.get_method_class("gradient_descent")
+        self.gd = snn.optimizers.get_method_class("gradient_descent")
 
     def test_gd(self):
         for d in test_functions._functions:

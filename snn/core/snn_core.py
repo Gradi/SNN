@@ -1,6 +1,6 @@
 import numpy as _np
 
-from SNN.core import neuron_functions as _nf
+from snn.core import neuron_functions as _nf
 
 
 class FlatArrayContainer(_np.ndarray):

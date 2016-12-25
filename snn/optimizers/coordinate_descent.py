@@ -1,5 +1,5 @@
 from numpy import abs, array
-from SNN.optimizers.base_optimizer import BaseOptimizer
+from snn.optimizers.base_optimizer import BaseOptimizer
 
 
 class CoordinateDescent(BaseOptimizer):

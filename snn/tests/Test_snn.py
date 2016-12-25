@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 import numpy.testing as np_test
 
-from network.SNN import SNN, load_from_json, Neuron, Layer
+from snn.network.snn import SNN, load_from_json, Neuron, Layer
 
 
 class TestSNN(unittest.TestCase):

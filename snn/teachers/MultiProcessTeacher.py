@@ -6,8 +6,8 @@ import time
 
 import numpy as np
 
-import SNN.optimizers as optimizers
-import SNN
+import snn.optimizers as optimizers
+import snn
 
 
 class MultiProcessTeacher:
@@ -119,7 +119,7 @@ def _worker_main(task, result_queue):
 
     result_dir = task["result_dir"]
 
-    network = SNN.load_from_json(task["net_json"])
+    network = snn.load_from_json(task["net_json"])
     network.set_test_inputs(task["test_data"]["x"], task["test_data"]["y"])
     weights = network.get_weights()
     for opt in task["optimizers"]:

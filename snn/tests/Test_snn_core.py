@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 import numpy.testing as np_tests
 
-from core import SNN_core as snn
+from snn.core import snn_core as snn
 
 
 class TestFlatArrayContainer(unittest.TestCase):

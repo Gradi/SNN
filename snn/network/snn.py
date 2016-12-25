@@ -3,13 +3,11 @@ import os.path as _path
 import warnings as _wrn
 import numpy as _np
 
-import SNN.utils.fast_nn as _fnn
-from SNN.core import SNN_core as _snn
-from SNN.core import Optimized_SNN as _opt_snn
+import snn.utils.fast_nn as _fnn
+from snn.core import snn_core as _snn
 
 Layer  = _snn.Layer
 Neuron = _snn.Neuron
-OptSNN = _opt_snn.OptSNN
 
 
 class SNN:
