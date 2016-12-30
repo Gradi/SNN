@@ -16,7 +16,8 @@ class SNN:
                  weight_bounds=(-1.0, 1.0),
                  func_bounds=(-1.0, 1.0)):
         self.__layers = list()
-        self.__weights_count = 0
+        self.__input_weights_count = 0
+        self.__func_weights_count = 0
         self.__test_inputs = None
         self.__test_results = None
         self.__weight_bounds = weight_bounds
@@ -65,25 +66,44 @@ class SNN:
             return result
 
     def set_weights(self, weights):
-        assert weights.size == self.__weights_count
+        assert weights.size == (self.__input_weights_count +
+                                self.__func_weights_count)
 
         total = 0
         for layer in self.__layers:
             layer.set_weights(weights[total:total + layer.weights_count])
             total += layer.weights_count
 
+    def set_input_weights(self, weights):
+        assert weights.size == self.__input_weights_count
+
+        total = 0
+        for layer in self.__layers:
+            layer.set_weights(weights[total:total+layer.input_weights_count])
+            total += layer.input_weights_count
+
+    def set_func_weights(self, weights):
+        assert weights.size == self.__func_weights_count
+
+        total = 0
+        for layer in self.__layers:
+            layer.set_func_weights(weights[total:total + layer.func_weights_count])
+            total += layer.func_weights_count
+
     def add_layer(self, layer):
         if type(layer) == Layer:
             layer = layer.copy()
             self.__init_weights(layer)
-            self.__weights_count += layer.weights_count
+            self.__input_weights_count += layer.input_weights_count
+            self.__func_weights_count += layer.func_weights_count
             self.__layers.append(layer)
         elif hasattr(layer, "__iter__") and\
              type(layer[0]) == Layer:
             for l in layer:
                 l = l.copy()
                 self.__init_weights(l)
-                self.__weights_count += l.weights_count
+                self.__input_weights_count += l.input_weights_count
+                self.__func_weights_count += l.func_weights_count
                 self.__layers.append(l)
         else:
             raise NameError("Unknown type received. "
