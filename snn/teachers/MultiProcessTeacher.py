@@ -75,7 +75,7 @@ class MultiProcessTeacher:
         return network, best_result["error"]
 
     def __teach(self, network, test_data):
-        start_time = time.perf_counter()
+        start_time = time.time()
         self.__log.info("Starting teaching...")
         self.__task["net_json"] = network.to_json(False)
         self.__task["test_data"] = test_data
@@ -108,8 +108,8 @@ class MultiProcessTeacher:
                 best_result["weights"] = weights
         self.__log.info("Cleaning up a temporary directory.")
         result_dir.cleanup()
-        sec = time.perf_counter() - start_time
-        self.__log.info("Teaching took %f seconds(%.0f min).", sec, sec / 60)
+        sec = time.time() - start_time
+        self.__log.info("Teaching took %.5f seconds(%.2f min).", sec, sec / 60)
         return best_result
 
 
@@ -128,6 +128,7 @@ def _worker_main(task, result_queue):
     network = snn.load_from_json(task["net_json"])
     network.set_test_inputs(task["test_data"]["x"], task["test_data"]["y"])
     weights = network.get_weights()
+
     for opt in task["opt_manager"]:
         log.info("Running \"%s\".", type(opt).__name__)
         weights = opt.start(network.error, weights)
