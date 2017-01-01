@@ -24,17 +24,21 @@ _b = 100.0
 def _rosenbrock_function(x):
     x, y = x
     return (_a - x) ** 2 + _b * (y - x ** 2) ** 2
-_functions.append({"f": _rosenbrock_function, "num": 2,
+_functions.append({"f": _rosenbrock_function,
+                   "num": 2,
                    "min": _np.array([_a, _a ** 2]),
-                   "bounds": (-2.0, 2.0), "atol": 0.4})
+                   "bounds": (-2.0, 2.0),
+                   "atol": 0.4})
 
 
 def _simple_function_001(x):
     x, y = x
     return 8 * x ** 2 + 5 * y ** 2 + 4 * x * y
-_functions.append({"f": _simple_function_001, "num": 2,
+_functions.append({"f": _simple_function_001,
+                   "num": 2,
                    "min": _np.array([0.0, 0.0]),
-                   "bounds": (-4.0, 4.0), "atol": 1e-3})
+                   "bounds": (-4.0, 4.0),
+                   "atol": 1e-3})
 
 
 def _rnd_point(num, bounds):

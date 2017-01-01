@@ -33,7 +33,7 @@ class RandomSearch(BaseOptimizer):
         while iterations < self._maxIter and \
                 (prev_rad is None or abs(prev_rad - rad) > self.__eps):
             prev_rad = rad
-            next_point = x +  (-rad + rand(x.size) * rad * 2 )
+            next_point = x + (-rad + rand(x.size) * rad * 2)
             fx = f(x)
             attempts = 0
             while f(next_point) > fx and attempts < self.__max_attempts:
@@ -45,6 +45,11 @@ class RandomSearch(BaseOptimizer):
             else:
                 rad *= self.__step_decrease
             iterations += 1
+            self._log.info("[Random Search] Iteration progress: %3.2f%%,"
+                           " Attempts this time: %d/%d (%3.2f%%)" % (
+                            iterations / self._maxIter * 100,
+                            attempts, self.__max_attempts,
+                            attempts / self.__max_attempts * 100))
 
         return x
 

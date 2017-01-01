@@ -12,11 +12,10 @@ class TestCoordinateDescent(unittest.TestCase):
 
     def test_cd(self):
         for d in test_functions._functions:
-            self.bounds = d["bounds"]
             cd = self.cd(eps=1e-20, maxIter=20000, h=0.5)
             for i in range(0, 10):
                 print("Coordinate descent: Point number %d" % i)
-                start_point = test_functions._rnd_point(d["num"], self.bounds)
+                start_point = test_functions._rnd_point(d["num"], d["bounds"])
                 end_point = cd.start(d["f"], start_point)
                 np_test.assert_allclose(end_point, d["min"], atol=d["atol"],
                                         err_msg="Start point was: {}".format(start_point))

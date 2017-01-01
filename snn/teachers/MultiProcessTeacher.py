@@ -17,7 +17,6 @@ class MultiProcessTeacher:
                  process_num=-1,
                  logging_config=None):
         """
-
         :param opt_manager: Instance of OptManager class.
         :param process_num: Number of process. If not set defaults to cpu_count().
         :param logging_config: Logging config for loggind.basicConfig() function.
@@ -37,17 +36,13 @@ class MultiProcessTeacher:
                 self.__logging_config = logging_config
         else:
             self.__logging_config = None
-        self.__separate_weights = False
-        self.__eps = 0.0
+        self.__net_json   = None
+        self.__test_data  = None
+        self.__result_dir = None
 
-    def teach(self, network, test_data, separate_weights=False,
-              nb_epoch=None, eps=None):
+    def teach(self, network, test_data, nb_epoch=None, eps=None):
         log = logging.getLogger("teachers.MultiProcessTeacher")
         network = network.copy()
-        self.__separate_weights = separate_weights
-        self.__eps = eps
-        if separate_weights and eps is None:
-            raise NameError("You should set eps when separate_weights is True.")
 
         if nb_epoch is None and eps is None:
             res = self.__teach(network, test_data)
@@ -65,7 +60,7 @@ class MultiProcessTeacher:
                 best_result = res
 
             log.info("Current error: %f, best error: %f", res["error"],
-                            best_result["error"])
+                     best_result["error"])
             if nb_epoch is not None:
                 epochs_count += 1
                 log.info("Epoch: %d/%d (%3.2f%%)", epochs_count, nb_epoch,
@@ -74,6 +69,8 @@ class MultiProcessTeacher:
                     epochs_ended = True
             if eps is not None:
                 eps_reached = best_result["error"] <= eps
+                log.info("Epsilon: %.2f (%10.5f%%)" % (best_result["error"] / eps,
+                         eps / best_result["error"] * 100))
         network.set_weights(best_result["weights"])
         return network, best_result["error"]
 
@@ -81,11 +78,11 @@ class MultiProcessTeacher:
         start_time = time.time()
         log = logging.getLogger("teachers.MultiProcessTeacher")
         log.info("Starting teaching...")
-        self.__net_json = network.to_json(False)
+        self.__net_json = network.to_json(with_weights=False)
         self.__test_data = test_data
         result_dir = tempfile.TemporaryDirectory()
         self.__result_dir = result_dir.name
-        log.info("Temporary dir is: %s", result_dir.name)
+        log.info("Temporary dir is: %s", self.__result_dir)
         workers = list()
         for i in range(0, self.__process_num):
             process = mp.Process(target=self._worker_main,
@@ -111,6 +108,9 @@ class MultiProcessTeacher:
                 best_result["weights"] = weights
         log.info("Cleaning up a temporary directory.")
         result_dir.cleanup()
+        self.__net_json = None
+        self.__test_data = None
+        self.__result_dir = None
         sec = time.time() - start_time
         log.info("Teaching took %.5f seconds(%.2f min).", sec, sec / 60)
         return best_result
@@ -128,34 +128,12 @@ class MultiProcessTeacher:
         network = snn.load_from_json(self.__net_json)
         network.set_test_inputs(self.__test_data["x"], self.__test_data["y"])
 
-        if not self.__separate_weights:
-            weights = network.get_weights()
-            for opt in self.__opt_manager:
-                log.info("Running \"%s\".", type(opt).__name__)
-                weights = opt.start(network.error, weights)
-                network.set_weights(weights)
-                log.info("Optimizer \"%s\" has completed.", type(opt).__name__)
-        else:
-            input_weights = network.get_weights("input")
-            func_weights = network.get_weights("func")
-            error = network.error()
-            prev_error = error + 2 * self.__eps
-            while _np.abs(error - prev_error) > self.__eps:
-
-                def f(func_weights):
-                    network.set_weights(func_weights, "func")
-                    input_weights = network.get_weights("input")
-                    for opt in self.__opt_manager:
-                        input_weights = opt.start(network.weights_only_error, input_weights)
-                        network.set_weights(input_weights, "input")
-                    return network.error()
-
-                for opt in self.__opt_manager:
-                    func_weights = opt.start(f, func_weights)
-                    network.set_weights(func_weights, "func")
-
-                prev_error = error
-                error = network.error()
+        weights = network.get_weights()
+        for opt in self.__opt_manager:
+            log.info("Running \"%s\".", type(opt).__name__)
+            weights = opt.start(network.error, weights)
+            network.set_weights(weights)
+            log.info("Optimizer \"%s\" has completed.", type(opt).__name__)
 
         log.info("Ran all the optimizers.")
         filename = path.join(self.__result_dir, "tmp_weights_{}.npz"

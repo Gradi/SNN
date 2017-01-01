@@ -1,6 +1,5 @@
 import json as _json
 import os.path as _path
-import warnings as _wrn
 import numpy as _np
 
 import snn.utils.fast_nn as _fnn
@@ -49,16 +48,6 @@ class SNN:
             self.set_weights(weights)
         return self.__mse()
 
-    def weights_only_error(self, weights=None):
-        if weights is not None:
-            self.set_weights(weights, "input")
-        return self.error()
-
-    def func_weights_error(self, weights=None):
-        if weights is not None:
-            self.set_weights(weights, "func")
-        return self.error()
-
     def input(self, data):
         if self.__input_prepared:
             result = data
@@ -82,10 +71,14 @@ class SNN:
                                         self.__func_weights_count)
             else:
                 assert weights.size == self.__input_weights_count
+
             total = 0
             for layer in self.__layers:
-                layer.set_weights(weights[total:total + layer.weights_count])
-                total += layer.weights_count
+                weights_count = layer.input_weights_count
+                if weights_type == "all":
+                    weights_count += layer.func_weights_count
+                layer.set_weights(weights[total:total + weights_count])
+                total += weights_count
         elif weights_type == "func":
             assert weights.size == self.__func_weights_count
             total = 0
@@ -105,6 +98,7 @@ class SNN:
             self.__layers.append(layer)
         elif hasattr(layer, "__iter__") and\
              type(layer[0]) == Layer:
+
             for l in layer:
                 l = l.copy()
                 self.__init_weights(l)
@@ -165,9 +159,8 @@ class SNN:
         return _json.dumps(result, indent=4)
 
     def save_to_file(self, filename, with_weights=True, overwrite=True):
-        if not overwrite:
-            if _path.exists(filename):
-                raise NameError("File {} already exists!".format(filename))
+        if not overwrite and _path.exists(filename):
+            raise NameError("File {} already exists!".format(filename))
         f = open(filename, "w")
         json_str = self.to_json(with_weights)
         f.write(json_str)

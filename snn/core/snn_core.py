@@ -109,7 +109,6 @@ class Layer:
 
     def __init__(self):
         self.__neurons = list()
-        self.weights_count = 0
         self.input_weights_count = 0
         self.func_weights_count = 0
         self.__W = None
@@ -139,7 +138,7 @@ class Layer:
 
     def input(self, input):
         result = self.__W * input
-        for ri in range(0, len(self.__neurons)):
+        for ri in range(0, self.out_len()):
             result[ri] = self.__neurons[ri].activate(result[ri])
         return result
 
@@ -201,12 +200,9 @@ class Layer:
 
     def init_layer(self):
         self.__W = _np.matrix(self.__neurons[0].get_input_weights())
-        self.weights_count += self.__neurons[0].total_len()
         self.input_weights_count += self.__neurons[0].w_len()
         self.func_weights_count += self.__neurons[0].f_len()
         for neuron in self.__neurons[1:]:
             self.__W = _np.vstack((self.__W, neuron.get_input_weights()))
-            self.weights_count += neuron.total_len()
             self.input_weights_count += neuron.w_len()
             self.func_weights_count += neuron.f_len()
-

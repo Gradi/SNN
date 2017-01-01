@@ -12,11 +12,10 @@ class TestRandomSearch(unittest.TestCase):
 
     def test_rs(self):
         for d in test_functions._functions:
-            self.bounds = d["bounds"]
             rs = self.rs()
             for i in range(0, 10):
                 print("Random search: Point number %d" % i)
-                start_point = test_functions._rnd_point(d["num"], self.bounds)
+                start_point = test_functions._rnd_point(d["num"], d["bounds"])
                 end_point = rs.start(d["f"], start_point)
                 np_test.assert_allclose(end_point, d["min"], atol=d["atol"],
                                         err_msg="Start point was: {}".format(start_point))
