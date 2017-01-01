@@ -38,7 +38,7 @@ def _neuron_func_npower(x, k=1):
         # x is negative and float
         old_dtype = x.dtype
         x = x.astype(_np.complex, copy=False)
-        x = _np.real(_np.power(x, k))
+        x = _np.real(_np.power(x, _np.abs(k)))
         return x.astype(old_dtype, copy=False)
 
 

@@ -161,12 +161,23 @@ class Layer:
             copy.add_neurons(neuron.copy())
         return copy
 
-    def get_weights(self):
-        res = _np.array(self.__W.A1)
-        for neuron in self.__neurons:
-            if neuron.f_len() != 0:
-                res = _np.append(res, neuron.get_func_weights())
-        return res
+    def get_weights(self, weights_type="all"):
+        if weights_type == "all":
+            res = _np.array(self.__W.A1)
+            for neuron in self:
+                if neuron.f_len() != 0:
+                    res = _np.append(res, neuron.get_func_weights())
+            return res
+        elif weights_type == "input":
+            return _np.array(self.__W.A1)
+        elif weights_type == "func":
+            res = _np.array([])
+            for neuron in self:
+                if neuron.f_len() != 0:
+                    res = _np.append(res, neuron.get_func_weights())
+            return res
+        else:
+            raise ValueError("Type must be all or input or func.")
 
     def set_weights(self, weights):
         W = weights[0:self.__W.size].reshape(self.__W.shape)

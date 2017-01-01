@@ -156,3 +156,34 @@ class TestSNN(unittest.TestCase):
             self.assertEqual(neuron.w_len(), 3)
             self.assertEqual(neuron.f_len(), 0)
             np_test.assert_array_equal(neuron.get_input_weights(), weights)
+
+    def test_returns_only_input_weights(self):
+        net = SNN(3)
+        layer = Layer()
+        weights = np.array([3.14, 3.14, 3.14])
+        for i in range(0, 50):
+            neuron = Neuron("linear", weights.copy())
+            layer.add_neurons(neuron)
+        net.add_layer(layer)
+
+        input_weights = net.get_weights("input")
+        np_test.assert_allclose(input_weights, 3.14)
+        func_weights = net.get_weights("func")
+        self.assertEqual(func_weights.size, 0)
+
+    def test_returns_only_func_weights(self):
+        net = SNN(3)
+        layer = Layer()
+        weights = np.array([3.14, 3.14, 3.14])
+        func_weights = np.array([2.5])
+        for i in range(0, 50):
+            neuron = Neuron("linear", weights.copy(), func_weights.copy())
+            layer.add_neurons(neuron)
+        net.add_layer(layer)
+
+        input_weights = net.get_weights("input")
+        np_test.assert_allclose(input_weights, 3.14)
+        func_weights = net.get_weights("func")
+        self.assertEqual(func_weights.size, 50)
+        np_test.assert_allclose(func_weights, 2.5)
+

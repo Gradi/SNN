@@ -49,6 +49,16 @@ class SNN:
             self.set_weights(weights)
         return self.__mse()
 
+    def weights_only_error(self, weights=None):
+        if weights is not None:
+            self.set_weights(weights, "input")
+        return self.error()
+
+    def func_weights_error(self, weights=None):
+        if weights is not None:
+            self.set_weights(weights, "func")
+        return self.error()
+
     def input(self, data):
         if self.__input_prepared:
             result = data
@@ -65,30 +75,26 @@ class SNN:
         else:
             return result
 
-    def set_weights(self, weights):
-        assert weights.size == (self.__input_weights_count +
-                                self.__func_weights_count)
-
-        total = 0
-        for layer in self.__layers:
-            layer.set_weights(weights[total:total + layer.weights_count])
-            total += layer.weights_count
-
-    def set_input_weights(self, weights):
-        assert weights.size == self.__input_weights_count
-
-        total = 0
-        for layer in self.__layers:
-            layer.set_weights(weights[total:total+layer.input_weights_count])
-            total += layer.input_weights_count
-
-    def set_func_weights(self, weights):
-        assert weights.size == self.__func_weights_count
-
-        total = 0
-        for layer in self.__layers:
-            layer.set_func_weights(weights[total:total + layer.func_weights_count])
-            total += layer.func_weights_count
+    def set_weights(self, weights, weights_type="all"):
+        if weights_type == "all" or weights_type == "input":
+            if weights_type == "all":
+                assert weights.size == (self.__input_weights_count +
+                                        self.__func_weights_count)
+            else:
+                assert weights.size == self.__input_weights_count
+            total = 0
+            for layer in self.__layers:
+                layer.set_weights(weights[total:total + layer.weights_count])
+                total += layer.weights_count
+        elif weights_type == "func":
+            assert weights.size == self.__func_weights_count
+            total = 0
+            for layer in self.__layers:
+                layer.set_func_weights(
+                    weights[total:total + layer.func_weights_count])
+                total += layer.func_weights_count
+        else:
+            raise ValueError("weights_type must be all or input or func.")
 
     def add_layer(self, layer):
         if type(layer) == Layer:
@@ -122,10 +128,10 @@ class SNN:
                 neuron.set_func_weights(f)
         layer.init_layer()
 
-    def get_weights(self):
+    def get_weights(self, weights_type="all"):
         result = _np.array([])
         for layer in self.__layers:
-            result = _np.append(result, layer.get_weights())
+            result = _np.append(result, layer.get_weights(weights_type))
         return result
 
     def layers(self):
