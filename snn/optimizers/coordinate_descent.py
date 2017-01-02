@@ -62,14 +62,21 @@ class CoordinateDescent(BaseOptimizer):
         ph = 0
         fx = f(x)
 
-        while f(x + max_h) < fx:
+        f_curr = f(x)
+        f_next = f(x + max_h)
+        while f_next < f_curr and abs(f_curr - f_next) > self.__eps / 100:
+            f_curr = f_next
             ph = max_h
             max_h /= self.__h_mul
+            f_next = f(x + max_h)
 
         x += ph
-        fx = f(x)
-        while f(x + h) < fx:
+        f_curr = f(x)
+        f_next = f(x + h)
+        while f_next < f_curr and abs(f_curr - f_next) > self.__eps / 100:
+            f_curr = f_next
             x += h
+            f_curr = f(x)
         return x
 
 
