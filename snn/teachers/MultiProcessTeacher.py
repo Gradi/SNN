@@ -110,8 +110,8 @@ class MultiProcessTeacher(Teacher):
         return best_result
 
     def _worker_main(self):
-        if self.__logging_config is not None:
-            logging_config = self.__logging_config
+        if self._logging_config is not None:
+            logging_config = self._logging_config
             logging_config["format"] = "[{}] {}".format(_mp.current_process().name,
                                                         logging_config["format"])
             _log.basicConfig(**logging_config)

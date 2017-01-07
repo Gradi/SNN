@@ -199,6 +199,8 @@ class Layer:
                 total += f_len
 
     def init_layer(self):
+        self.input_weights_count = 0
+        self.func_weights_count = 0
         self.__W = _np.matrix(self.__neurons[0].get_input_weights())
         self.input_weights_count += self.__neurons[0].w_len()
         self.func_weights_count += self.__neurons[0].f_len()

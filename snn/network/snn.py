@@ -138,8 +138,11 @@ class SNN:
             return self.__layers[-1].out_len()
 
     def reset_weights(self):
-        for layer in self.__layers:
+        old_layers = self.__layers
+        self.__layers = list()
+        for layer in old_layers:
             self.__init_weights(layer, True)
+            self.__layers.append(layer)
 
     def to_json(self, with_weights=True):
         result = dict()
