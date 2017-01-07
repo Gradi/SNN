@@ -117,11 +117,11 @@ class MultiProcessTeacher(Teacher):
             _log.basicConfig(**logging_config)
         else:
             _log.disable(_log.CRITICAL)
-        # Log instance can't be pickled that is why we need to create a new log.
-        log = _log.getLogger("teachers._worker_main")
 
         network = snn.load_from_json(self.__net_json)
         network.set_test_inputs(self.__test_data["x"], self.__test_data["y"])
+        # Log instance can not be pickled that is why we need to create a new log.
+        log = _log.getLogger("teaches.MultiprocessTeacher")
 
         weights = network.get_weights()
         for opt in self.__opt_manager:
@@ -141,3 +141,9 @@ class MultiProcessTeacher(Teacher):
         self.__result_queue.put(result)
         self.__result_queue.close()
         log.info("Done.")
+
+    def __getstate__(self):
+        # Must delete _log because it isn't pickable.
+        state = dict(self.__dict__)
+        del state["_log"]
+        return state
