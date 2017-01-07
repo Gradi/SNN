@@ -109,15 +109,15 @@ class SNN:
             raise NameError("Unknown type received. "
                             "Expected Layer or iterable of layer")
 
-    def __init_weights(self, layer):
+    def __init_weights(self, layer, force=False):
         input_count = self.__input_count if len(self.__layers) == 0\
                       else self.__layers[-1].out_len()
         for neuron in layer:
-            if neuron.w_len() == 0:
+            if neuron.w_len() == 0 or force:
                 w = _fnn.rnd_weights(input_count, self.__weight_bounds)
                 neuron.set_input_weights(w)
-            if neuron.get_func_weights() is None and\
-               neuron.f_len() != 0:
+            if neuron.f_len() != 0 and\
+                    (neuron.get_func_weights() is None or force):
                 f = _fnn.rnd_weights(neuron.f_len(), self.__func_bounds)
                 neuron.set_func_weights(f)
         layer.init_layer()
@@ -136,6 +136,10 @@ class SNN:
             return NameError("Network is empty. Don't know output length yet.")
         else:
             return self.__layers[-1].out_len()
+
+    def reset_weights(self):
+        for layer in self.__layers:
+            self.__init_weights(layer, True)
 
     def to_json(self, with_weights=True):
         result = dict()
