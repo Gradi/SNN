@@ -17,4 +17,4 @@ class OptManager:
                 yield className(**self.__kwargs)
         else:
             for name, kwargs in self.__methods.items():
-                yield _opt.get_method_class(name)(**{**kwargs, **self.__kwargs})
+                yield _opt.get_method_class(name)(**{**self.__kwargs, **kwargs})
