@@ -4,28 +4,34 @@ import numpy as _np
 
 import snn.utils.fast_nn as _fnn
 from snn.core import snn_core as _snn
-
-Layer  = _snn.Layer
-Neuron = _snn.Neuron
+import snn.network.perceptron as _perceptron
 
 
-class SNN:
+class PerceptronNumpy(_perceptron.Perceptron):
+    """
+        Implementation of Perceptron using numpy's matrices
+        and blas library multiplication.
+        PS. Intel MKL, for example, can automatically
+        run matrix multiplication using all cores.
+    """
 
-    def __init__(self, input_count,
-                 weight_bounds=(-1.0, 1.0),
-                 func_bounds=(-1.0, 1.0)):
+    def __init__(self, input_count, error_name="mse"):
+        """
+        :param input_count:
+        :param error_name: Currently only Mean Squared Error is implemented.
+        """
+        super().__init__(input_count, error_name)
         self.__layers = list()
         self.__input_weights_count = 0
         self.__func_weights_count = 0
         self.__test_inputs = None
         self.__test_results = None
-        self.__weight_bounds = weight_bounds
-        self.__func_bounds = func_bounds
-        self.__input_count = input_count
         self.__input_prepared = False
+        self.__error = self.__mse
 
     def set_test_inputs(self, inputs, out):
-        self.__test_inputs = _np.matrix(inputs).T
+        assert inputs.shape[1] == self._input_count
+        self.__test_inputs = _np.transpose(_np.matrix(inputs))
         self.__test_results = _np.matrix(out)
 
     def __mse(self):
@@ -46,13 +52,27 @@ class SNN:
             raise NameError("Test data isn't provided.")
         if weights is not None:
             self.set_weights(weights)
-        return self.__mse()
+        return self.__error()
+
+    def error_input_weights(self, input_weights=None):
+        if self.__test_inputs is None or self.__test_results is None:
+            raise NameError("Test data isn't provided.")
+        if input_weights is not None:
+            self.set_weights(input_weights, "input")
+        return self.__error()
+
+    def error_func_weights(self, func_weights=None):
+        if self.__test_inputs is None or self.__test_results is None:
+            raise NameError("Test data isn't provided.")
+        if func_weights is not None:
+            self.set_weights(func_weights, "func")
+        return self.__error()
 
     def input(self, data):
         if self.__input_prepared:
             result = data
         else:
-            result = _np.matrix(data, copy=False).T
+            result = _np.transpose(_np.matrix(data, copy=False))
 
         for layer in self.__layers:
             result = layer.input(result)
@@ -64,7 +84,7 @@ class SNN:
         else:
             return result
 
-    def set_weights(self, weights, weights_type="all"):
+    def set_weights(self, weights, weights_type=None):
         if weights_type == "all" or weights_type == "input":
             if weights_type == "all":
                 assert weights.size == (self.__input_weights_count +
@@ -89,73 +109,59 @@ class SNN:
         else:
             raise ValueError("weights_type must be all or input or func.")
 
-    def add_layer(self, layer):
-        if type(layer) == Layer:
-            layer = layer.copy()
-            self.__init_weights(layer)
-            self.__input_weights_count += layer.input_weights_count
-            self.__func_weights_count += layer.func_weights_count
-            self.__layers.append(layer)
-        elif hasattr(layer, "__iter__") and\
-             type(layer[0]) == Layer:
-
-            for l in layer:
-                l = l.copy()
-                self.__init_weights(l)
-                self.__input_weights_count += l.input_weights_count
-                self.__func_weights_count += l.func_weights_count
-                self.__layers.append(l)
-        else:
-            raise NameError("Unknown type received. "
-                            "Expected Layer or iterable of layer")
-
-    def __init_weights(self, layer, force=False):
-        input_count = self.__input_count if len(self.__layers) == 0\
-                      else self.__layers[-1].out_len()
-        for neuron in layer:
-            if neuron.w_len() == 0 or force:
-                w = _fnn.rnd_weights(input_count, self.__weight_bounds)
-                neuron.set_input_weights(w)
-            if neuron.f_len() != 0 and\
-                    (neuron.get_func_weights() is None or force):
-                f = _fnn.rnd_weights(neuron.f_len(), self.__func_bounds)
-                neuron.set_func_weights(f)
-        layer.init_layer()
-
     def get_weights(self, weights_type="all"):
         result = _np.array([])
         for layer in self.__layers:
             result = _np.append(result, layer.get_weights(weights_type))
         return result
 
+    def add_layer(self, layer):
+        if type(layer) == _snn.Layer:
+            layer = layer.copy()
+            self.__layers.append(layer)
+        elif hasattr(layer, "__iter__") and\
+             type(layer[0]) == _snn.Layer:
+            for l in layer:
+                l = l.copy()
+                self.__layers.append(l)
+        else:
+            raise NameError("Unknown type received. "
+                            "Expected Layer or iterable of layer")
+        self.reset_weights()
+        self.__input_weights_count = 0
+        self.__func_weights_count  = 0
+        for layer in self.layers():
+            self.__input_weights_count += layer.input_weights_count
+            self.__func_weights_count  += layer.func_weights_count
+
     def layers(self):
         return self.__layers
 
     def net_output_len(self):
         if len(self.__layers) == 0:
-            return NameError("Network is empty. Don't know output length yet.")
+            raise NameError("Network is empty. Don't know output length yet.")
         else:
             return self.__layers[-1].out_len()
 
     def reset_weights(self):
-        old_layers = self.__layers
-        self.__layers = list()
-        for layer in old_layers:
-            self.__init_weights(layer, True)
-            self.__layers.append(layer)
+        input_count = self._input_count
+        for layer in self.__layers:
+            for neuron in layer:
+                neuron.set_input_weights(_fnn.rnd_weights(input_count))
+                if neuron.f_len() != 0:
+                    neuron.set_func_weights(_fnn.rnd_weights(neuron.f_len()))
+            input_count = layer.out_len()
 
     def to_json(self, with_weights=True):
         result = dict()
-        result["weight_bounds"] = self.__weight_bounds
-        result["func_bounds"] = self.__func_bounds
-        result["input_count"] = self.__input_count
+        result["input_count"] = self._input_count
+        result["error_name"]  = self._error_name
         result["layers"] = list()
         for layer in self.__layers:
             layer_dump = list()
             for neuron in layer:
                 neuron_dump = dict()
                 neuron_dump["func_name"] = neuron.func_name()
-                neuron_dump["w_len"] = neuron.w_len()
                 neuron_dump["f_len"] = neuron.f_len()
                 if with_weights:
                     neuron_dump["weights"] = neuron.get_input_weights().tolist()
@@ -173,45 +179,36 @@ class SNN:
         f.write(json_str)
         f.close()
 
-    def get_weights_bounds(self):
-        return self.__weight_bounds
-
-    def get_func_bounds(self):
-        return self.__func_bounds
-
     def copy(self):
-        copy = SNN(self.__input_count, self.__weight_bounds, self.__func_bounds)
+        copy = PerceptronNumpy(self._input_count, self._error_name)
         for layer in self.layers():
             copy.add_layer(layer.copy())
         return copy
 
+    def load_from_json(json_str):
+        net_dump = _json.loads(json_str)
+        input_count = net_dump["input_count"]
+        error_name = net_dump["error_name"]
+        net = PerceptronNumpy(input_count, error_name)
+        for layer_dump in net_dump["layers"]:
+            layer = _snn.Layer()
+            for neuron_dump in layer_dump:
+                if "weights" in neuron_dump:
+                    weights = _np.array(neuron_dump["weights"])
+                else:
+                    weights = None
+                if "func_weights" in neuron_dump:
+                    func_weights = _np.array(neuron_dump["func_weights"])
+                else:
+                    func_weights = None
+                neuron = _snn.Neuron(neuron_dump["func_name"], weights, func_weights,
+                                     neuron_dump["f_len"])
+                layer.add_neurons(neuron)
+            net.add_layer(layer)
+        return net
 
-def load_from_json(json_str):
-    net_dump = _json.loads(json_str)
-    weight_bounds = net_dump["weight_bounds"]
-    func_bounds = net_dump["func_bounds"]
-    input_count = net_dump["input_count"]
-    net = SNN(input_count, weight_bounds, func_bounds)
-    for layer_dump in net_dump["layers"]:
-        layer = Layer()
-        for neuron_dump in layer_dump:
-            if "weights" in neuron_dump:
-                weights = _np.array(neuron_dump["weights"])
-            else:
-                weights = None
-            if "func_weights" in neuron_dump:
-                func_weights = _np.array(neuron_dump["func_weights"])
-            else:
-                func_weights = None
-            neuron = Neuron(neuron_dump["func_name"], weights, func_weights,
-                            neuron_dump["f_len"])
-            layer.add_neurons(neuron)
-        net.add_layer(layer)
-    return net
-
-
-def load_from_file(filename):
-    f = open(filename, "r")
-    json_str = f.read()
-    f.close()
-    return load_from_json(json_str)
+    def load_from_file(filename):
+        f = open(filename, "r")
+        json_str = f.read()
+        f.close()
+        return PerceptronNumpy.load_from_json(json_str)

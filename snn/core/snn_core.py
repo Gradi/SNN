@@ -3,53 +3,12 @@ import numpy as _np
 from snn.core import neuron_functions as _nf
 
 
-class FlatArrayContainer(_np.ndarray):
-    """
-        Currently this class is not used.
-        Maybe i should delete it.
-    """
-
-    def __new__(cls, dtype):
-        obj = super(FlatArrayContainer, cls).__new__(cls, shape=0, dtype=dtype, buffer=None)
-        obj.arrays_indexes = _np.array([0], dtype=_np.uint32)
-        return obj
-
-    def add_array(self, array):
-        if array.dtype != self.dtype:
-            raise NameError("dtype of input array({}) != my own dtype({})".format(array.dtype, self.dtype))
-
-        last_ar = self.arrays_indexes[-1]
-        new_ar = len(array) + last_ar
-        self.arrays_indexes = _np.append(self.arrays_indexes, new_ar)
-        self.resize(new_ar, refcheck=False)
-        self[last_ar:new_ar] = _np.array(array, dtype=self.dtype)
-
-    def generator(self):
-        for i in range(0, len(self.arrays_indexes) - 1):
-            start = self.arrays_indexes[i]
-            end = self.arrays_indexes[i+1]
-            yield self[start:end]
-
-    def copy(self):
-        copy = FlatArrayContainer(self.dtype)
-        for array in self.generator():
-            copy.add_array(array)
-        return copy
-
-    def internal_replace(self, array, copy=True):
-        if len(self) != len(array):
-            raise NameError("Length of new internal array({}) != my current len({})".format(len(array), len(self)))
-        if self.dtype != array.dtype:
-            raise NameError("dtype  of new internal array({}) != my current dtype({})".format(array.dtype, self.dtype))
-        if copy:
-            self.data = _np.array(array).data
-        else:
-            self.data = array.data
-
-
 class Neuron:
 
-    def __init__(self, func_name, weights=None, func_weights=None,
+    def __init__(self,
+                 func_name,
+                 weights=None,
+                 func_weights=None,
                  func_weights_count=0):
         self.__weights = weights
         self.__func_weights = func_weights
@@ -124,17 +83,28 @@ class Layer:
             raise ValueError("Expected neuron or iterator of neurons.")
 
     def __iter__(self):
-        if self.__W is None:
-            return iter(self.__neurons)
-        else:
-            return self.__neuron_generator()
+        return self.__neuron_generator()
 
     def __neuron_generator(self):
-        for ri in range(0, self.out_len()):
-            weights = _np.array(self.__W[ri].A1)
-            neuron = self.__neurons[ri]
-            neuron.set_input_weights(weights)
-            yield neuron
+        # When W is None it means that neurons might not have
+        # input weights initialized and then we must just return
+        # neurons.
+        # But when W is not None first of all we must update input weights
+        # of neurons before we return them.
+        # In any case after we "yielded" all neurons
+        # we must update matrix W, because someone could change neurons weights
+        # during iteration.
+
+        if self.__W is None:
+            for neuron in self.__neurons:
+                yield neuron
+        else:
+            for ri in range(0, self.out_len()):
+                weights = _np.array(self.__W[ri].A1)
+                neuron = self.__neurons[ri]
+                neuron.set_input_weights(weights)
+                yield neuron
+        self.__update_matrix()
 
     def input(self, input):
         result = self.__W * input
@@ -161,20 +131,18 @@ class Layer:
         return copy
 
     def get_weights(self, weights_type="all"):
+        func_weights = _np.array([])
+        for neuron in self:
+            if neuron.f_len() != 0:
+                func_weights = _np.append(func_weights, neuron.get_func_weights())
         if weights_type == "all":
             res = _np.array(self.__W.A1)
-            for neuron in self:
-                if neuron.f_len() != 0:
-                    res = _np.append(res, neuron.get_func_weights())
+            res = _np.append(res, func_weights)
             return res
         elif weights_type == "input":
             return _np.array(self.__W.A1)
         elif weights_type == "func":
-            res = _np.array([])
-            for neuron in self:
-                if neuron.f_len() != 0:
-                    res = _np.append(res, neuron.get_func_weights())
-            return res
+            return func_weights
         else:
             raise ValueError("Type must be all or input or func.")
 
@@ -198,13 +166,13 @@ class Layer:
                 neuron.set_func_weights(weights[total:total + f_len])
                 total += f_len
 
-    def init_layer(self):
+    def __update_matrix(self):
         self.input_weights_count = 0
-        self.func_weights_count = 0
+        self.func_weights_count  = 0
         self.__W = _np.matrix(self.__neurons[0].get_input_weights())
         self.input_weights_count += self.__neurons[0].w_len()
-        self.func_weights_count += self.__neurons[0].f_len()
+        self.func_weights_count  += self.__neurons[0].f_len()
         for neuron in self.__neurons[1:]:
             self.__W = _np.vstack((self.__W, neuron.get_input_weights()))
             self.input_weights_count += neuron.w_len()
-            self.func_weights_count += neuron.f_len()
+            self.func_weights_count  += neuron.f_len()
