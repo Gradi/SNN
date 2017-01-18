@@ -1,3 +1,4 @@
+from snn.network.perceptron_numpy import PerceptronNumpy as _PN
 
 
 def make_network(network_type, impl_type, *args, **kwargs):
@@ -14,7 +15,8 @@ def make_network(network_type, impl_type, *args, **kwargs):
 
 
 def _perceptron_creator(impl_type, *args, **kwargs):
-    raise NotImplementedError()
+    # Currently only numpy implementation is available.
+    return _PN(*args, **kwargs)
 
 _net_types = dict()
 _net_types["perceptron"] = _perceptron_creator

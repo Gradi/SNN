@@ -12,8 +12,7 @@ class OptManager:
 
     def __iter__(self):
         if not self.__methods:
-            self.__methods = _opt.get_all_methods()
-            for name, className in self.__methods.items():
+            for name, className in _opt.get_all_methods().items():
                 yield className(**self.__kwargs)
         else:
             for name, kwargs in self.__methods.items():

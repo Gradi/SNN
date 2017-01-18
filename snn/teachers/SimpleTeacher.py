@@ -57,6 +57,6 @@ class SimpleTeacher(Teacher):
 
         network.set_weights(best_weights)
         sec = time.time() - start_time
-        self._log.info("Teaching is complete. Took time: %5.3f sec (%3.2 min)",
+        self._log.info("Teaching is complete. Took time: %5.3f sec (%3.2f min)",
                        sec, sec / 60)
         return network, best_error

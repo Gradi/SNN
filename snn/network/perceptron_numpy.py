@@ -84,7 +84,7 @@ class PerceptronNumpy(_perceptron.Perceptron):
         else:
             return result
 
-    def set_weights(self, weights, weights_type=None):
+    def set_weights(self, weights, weights_type="all"):
         if weights_type == "all" or weights_type == "input":
             if weights_type == "all":
                 assert weights.size == (self.__input_weights_count +
@@ -127,7 +127,7 @@ class PerceptronNumpy(_perceptron.Perceptron):
         else:
             raise NameError("Unknown type received. "
                             "Expected Layer or iterable of layer")
-        self.reset_weights()
+        self.reset_weights(False)
         self.__input_weights_count = 0
         self.__func_weights_count  = 0
         for layer in self.layers():
@@ -143,12 +143,13 @@ class PerceptronNumpy(_perceptron.Perceptron):
         else:
             return self.__layers[-1].out_len()
 
-    def reset_weights(self):
+    def reset_weights(self, force=True):
         input_count = self._input_count
         for layer in self.__layers:
             for neuron in layer:
-                neuron.set_input_weights(_fnn.rnd_weights(input_count))
-                if neuron.f_len() != 0:
+                if force or neuron.w_len() == 0:
+                    neuron.set_input_weights(_fnn.rnd_weights(input_count))
+                if neuron.f_len() != 0 and (neuron.get_func_weights() is None or force):
                     neuron.set_func_weights(_fnn.rnd_weights(neuron.f_len()))
             input_count = layer.out_len()
 

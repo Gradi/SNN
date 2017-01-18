@@ -1,1 +1,19 @@
-from .network.perceptron_numpy import *
+from snn.network.network_factory import make_network
+import snn.core.snn_core as _snn
+import snn.utils.fast_nn as _fnn
+import snn.teachers.MultiProcessTeacher as _MPT
+import snn.teachers.SimpleTeacher as _ST
+import snn.optimizers.optimizer_manager as _opt_mgr
+import snn.utils.datagen as _gen
+
+Neuron = _snn.Neuron
+Layer  = _snn.Layer
+
+make_neurons = _fnn.make_neurons
+make_layer = _fnn.make_layer
+
+MultiProcessTeacher = _MPT.MultiProcessTeacher
+SimpleTeacher = _ST.SimpleTeacher
+OptManager = _opt_mgr.OptManager
+
+DataGen = _gen.DataGen

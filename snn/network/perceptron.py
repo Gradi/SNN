@@ -36,7 +36,7 @@ class Perceptron(object):
     def net_output_len(self):
         raise NotImplementedError()
 
-    def reset_weights(self):
+    def reset_weights(self, force=True):
         raise NotImplementedError()
 
     def to_json(self, with_weights=True):
