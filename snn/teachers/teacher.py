@@ -23,7 +23,7 @@ class Teacher:
         self._log = _log.getLogger("teachers.{}".format(type(self).__name__))
 
     def teach(self, network, test_data, nb_epoch=None, eps=None,
-              callback=None):
+              callback=None, separate_weights=False, separate_eps=1e-10):
         """
             Main teach function. Call this function when you
             want to teach you net.
@@ -36,6 +36,11 @@ class Teacher:
                          one iteration of teaching is complete.
                          If such function returns False then teaching immediately
                          stopped and current net instance is returned.
+        :param separate_weights: If True then first of all input weights are trained.
+                                 Then functional weights are trained.
+        :param separate_eps: Used with separate_weights param. Train net until
+                             difference between current error and previous error
+                             is less than eps.
         :return: ready net, error
         """
         raise NotImplementedError()

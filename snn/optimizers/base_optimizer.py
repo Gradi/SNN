@@ -16,6 +16,7 @@ class BaseOptimizer:
     def __init__(self, **kwargs):
         self._maxIter = kwargs.get("maxIter", 5000)
         self._log = logging.getLogger("optimizers.base_optimizer")
+        self._log.disabled = True
 
     def start(self, f, x):
         msg = "This optimizer isn't implemented: {}".format(self)
