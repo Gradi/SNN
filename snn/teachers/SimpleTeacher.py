@@ -17,7 +17,7 @@ class SimpleTeacher(Teacher):
         self.__opt_manager = opt_manager
 
     def teach(self, network, test_data, nb_epoch=None, eps=None,
-              callback=None, separate_weights=False, separate_eps=1e-10):
+              callback=None, separate_weights=False):
         start_time = time.time()
 
         network = network.copy()
@@ -37,12 +37,15 @@ class SimpleTeacher(Teacher):
                     weights = opt.start(network.error, network.get_weights())
                     network.set_weights(weights)
             else:
-                weights = network.get_weights("input")
-                func_weights = network.get_weights("func")
-                error = separate_eps
-                prev_error = error * 5
-                while _np.abs(error - prev_error) >= self.__separate_eps:
+                error = 0
+                prev_error = 1
+                prev_net = None
+                while error <= prev_error:
                     prev_error = error
+                    prev_net = network.copy()
+                    weights = network.get_weights("input")
+                    func_weights = network.get_weights("func")
+
                     self._log.info("Training input weights only.")
                     for opt in self.__opt_manager:
                         self._log.info("Running \"%s\"", type(opt).__name__)
@@ -60,9 +63,16 @@ class SimpleTeacher(Teacher):
                         network.set_weights(func_weights, "func")
                         self._log.info("Optimizer \"%s\" has completed.",
                                  type(opt).__name__)
+
+                    log.info("Training all weights together.")
+                    for opt in self.__opt_manager:
+                        log.info("Running \"%s\"", type(opt).__name__)
+                        weights = opt.start(network.error, network.get_weights())
+                        network.set_weights(weights)
+                        log.info("Optimizer \"%s\" has completed.", type(opt).__name__)
+
                     error = network.error()
-                    self._log.info("Iteration complete. Error abs: %f",
-                             _np.abs(error - prev_error))
+                network = prev_net
 
             self._log.info("Ran all the optimizers.")
             if best_error is None or network.error() < best_error:

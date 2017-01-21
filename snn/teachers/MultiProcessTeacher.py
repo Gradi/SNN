@@ -29,14 +29,12 @@ class MultiProcessTeacher(Teacher):
         self.__test_data  = None
         self.__result_dir = None
         self.__separate_weights = False
-        self.__separate_eps = 0.0
         self._log.info("There will be %d processes.", self.__process_num)
 
     def teach(self, network, test_data, nb_epoch=None, eps=None,
-              callback=None, separate_weights=False, separate_eps=1e-10):
+              callback=None, separate_weights=False):
         network = network.copy()
         self.__separate_weights = separate_weights
-        self.__separate_eps = separate_eps
 
         if nb_epoch is None and eps is None:
             res = self.__teach(network, test_data)
@@ -135,12 +133,15 @@ class MultiProcessTeacher(Teacher):
                 network.set_weights(weights)
                 log.info("Optimizer \"%s\" has completed.", type(opt).__name__)
         else:
-            error = self.__separate_eps
-            prev_error = error * 5
-            while _np.abs(error - prev_error) >= self.__separate_eps:
+            error = network.error()
+            prev_error = error * 2
+            prev_net = None
+            while error < prev_error:
+                prev_error = error
+                prev_net = network.copy()
                 weights = network.get_weights("input")
                 func_weights = network.get_weights("func")
-                prev_error = error
+
                 log.info("Training input weights only.")
                 for opt in self.__opt_manager:
                     log.info("Running \"%s\"", type(opt).__name__)
@@ -163,7 +164,8 @@ class MultiProcessTeacher(Teacher):
                     log.info("Optimizer \"%s\" has completed.", type(opt).__name__)
 
                 error = network.error()
-                log.info("Iteration complete. Error abs: %f", _np.abs(error - prev_error))
+                log.info("Previous error: %f, Current error: %f", prev_error, error)
+            network = prev_net
 
         log.info("Ran all the optimizers.")
         filename = _path.join(self.__result_dir, "tmp_weights_{}.npz".
