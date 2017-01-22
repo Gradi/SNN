@@ -125,47 +125,31 @@ class MultiProcessTeacher(Teacher):
         # Log instance can not be pickled that is why we need to create a new log.
         log = _log.getLogger("teaches.MultiprocessTeacher")
 
-        if not self.__separate_weights:
-            weights = network.get_weights()
+        log.info("Training all weights together.")
+        weights = network.get_weights()
+        for opt in self.__opt_manager:
+            log.info("Running \"%s\".", type(opt).__name__)
+            weights = opt.start(network.error, weights)
+            network.set_weights(weights)
+            log.info("Optimizer \"%s\" has completed.", type(opt).__name__)
+
+        if self.__separate_weights:
+            log.info("Training input weights only.")
+            weights = network.get_weights("input")
             for opt in self.__opt_manager:
-                log.info("Running \"%s\".", type(opt).__name__)
-                weights = opt.start(network.error, weights)
-                network.set_weights(weights)
+                log.info("Running \"%s\"", type(opt).__name__)
+                weights = opt.start(network.error_input_weights, weights)
+                network.set_weights(weights, "input")
                 log.info("Optimizer \"%s\" has completed.", type(opt).__name__)
-        else:
-            error = network.error()
-            prev_error = error * 2
-            prev_net = None
-            while error < prev_error:
-                prev_error = error
-                prev_net = network.copy()
-                weights = network.get_weights("input")
-                func_weights = network.get_weights("func")
 
-                log.info("Training input weights only.")
-                for opt in self.__opt_manager:
-                    log.info("Running \"%s\"", type(opt).__name__)
-                    weights = opt.start(network.error_input_weights, weights)
-                    network.set_weights(weights, "input")
-                    log.info("Optimizer \"%s\" has completed.", type(opt).__name__)
+            log.info("Training func weights only.")
+            weights = network.get_weights("func")
+            for opt in self.__opt_manager:
+                log.info("Running \"%s\"", type(opt).__name__)
+                func_weights = opt.start(network.error_func_weights, weights)
+                network.set_weights(weights, "func")
+                log.info("Optimizer \"%s\" has completed.", type(opt).__name__)
 
-                log.info("Training func weights only.")
-                for opt in self.__opt_manager:
-                    log.info("Running \"%s\"", type(opt).__name__)
-                    func_weights = opt.start(network.error_func_weights, func_weights)
-                    network.set_weights(func_weights, "func")
-                    log.info("Optimizer \"%s\" has completed.", type(opt).__name__)
-
-                log.info("Training all weights together.")
-                for opt in self.__opt_manager:
-                    log.info("Running \"%s\"", type(opt).__name__)
-                    weights = opt.start(network.error, network.get_weights())
-                    network.set_weights(weights)
-                    log.info("Optimizer \"%s\" has completed.", type(opt).__name__)
-
-                error = network.error()
-                log.info("Previous error: %f, Current error: %f", prev_error, error)
-            network = prev_net
 
         log.info("Ran all the optimizers.")
         filename = _path.join(self.__result_dir, "tmp_weights_{}.npz".
