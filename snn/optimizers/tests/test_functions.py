@@ -27,8 +27,8 @@ def _rosenbrock_function(x):
 _functions.append({"f": _rosenbrock_function,
                    "num": 2,
                    "min": _np.array([_a, _a ** 2]),
-                   "bounds": (-2.0, 2.0),
-                   "atol": 0.4})
+                   "bounds": (-5.0, -4.5),
+                   "atol": 0.2})
 
 
 def _simple_function_001(x):
@@ -37,9 +37,20 @@ def _simple_function_001(x):
 _functions.append({"f": _simple_function_001,
                    "num": 2,
                    "min": _np.array([0.0, 0.0]),
-                   "bounds": (-4.0, 4.0),
-                   "atol": 1e-3})
+                   "bounds": (-10.0, 10.0),
+                   "atol": 0.1})
 
+
+def _sphere5d(x):
+    sum = 0
+    for x in x:
+        sum += x ** 2
+    return sum
+_functions.append({"f": _sphere5d,
+                   "num": 5,
+                   "min": _np.zeros(5, dtype=_np.float),
+                   "bounds": (-10, 10),
+                   "atol": 0.1})
 
 def _rnd_point(num, bounds):
     """

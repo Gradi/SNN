@@ -16,8 +16,8 @@ class TestAllOptimizers(unittest.TestCase):
                 for i in range(0, 10):
                     start_point = test_functions._rnd_point(func["num"],
                                                             func["bounds"])
-                    msg = "Optimizer name: {}, start point was: {}"\
-                          .format(type(optimizer).__name__, start_point)
+                    msg = "Optimizer name: {}, start point was: {}, num point: {}"\
+                          .format(type(optimizer).__name__, start_point, i+1)
                     end_point = optimizer.start(func["f"], start_point)
                     np_test.assert_allclose(end_point, func["min"],
                                             atol=func["atol"],
