@@ -69,8 +69,10 @@ class Layer:
     def __init__(self):
         self.__neurons = list()
         self.input_weights_count = 0
-        self.func_weights_count = 0
+        self.func_weights_count  = 0
         self.__W = None
+        self.__F = None
+        self.__function = None
 
     def add_neurons(self, neuron):
         if hasattr(neuron, "__iter__") and\
@@ -105,11 +107,21 @@ class Layer:
                 neuron.set_input_weights(weights)
                 yield neuron
         self.__update_matrix()
+        self.__optimize_neurons()
 
     def input(self, input):
         result = self.__W * input
-        for ri in range(0, self.out_len()):
-            result[ri] = self.__neurons[ri].activate(result[ri])
+        if self.__function is not None:
+            if self.__F is not None:
+                assert result.shape[0] == self.__F.size
+                result = _np.array(result, copy=False)
+                result = self.__function(result, self.__F.reshape((result.shape[0], 1)))
+                return _np.matrix(result)
+            else:
+                return self.__function(result)
+        else:
+            for ri in range(0, self.out_len()):
+                result[ri] = self.__neurons[ri].activate(result[ri])
         return result
 
     def out_len(self):
@@ -180,3 +192,25 @@ class Layer:
         except:
             self.__W = None
             # Well. It seems that neurons don't have weights yet.
+
+    def __optimize_neurons(self):
+        if self.__neurons_can_be_optimized():
+            self.__function = _nf.get(self.__neurons[0].func_name())
+            if self.func_weights_count:
+                self.__F = _np.array([], dtype=_np.float)
+                for neuron in self.__neurons:
+                    self.__F = _np.append(self.__F, neuron.get_)
+
+    def __neurons_can_be_optimized(self):
+        # If all neurons have the same function and func_weights
+        # are zero or one then we can instead of calling each neuron's
+        # activation function call it once with x being input in current layer
+        # and F being all func weights in one array.
+        # Because numpy can run function element wisely and because len of F
+        # equal to len of input (or zero if every neuron doesn't have func_weights)
+        func_name = self.__neurons[0].func_name()
+        for neuron in self.__neurons:
+            if func_name != neuron.func_name():
+                return False
+            if neuron.f_len() != 0 and neuron.f_len() != 1:
+                return False
