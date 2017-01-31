@@ -72,9 +72,9 @@ class TestNeuron(unittest.TestCase):
         neuron.set_input_weights(weights)
         neuron.set_func_weights(func_weights)
 
-        self.assertEquals(_np.equal(neuron.get_input_weights(), copy.get_input_weights()).all(),
+        self.assertEqual(_np.equal(neuron.get_input_weights(), copy.get_input_weights()).all(),
                           False)
-        self.assertEquals(_np.equal(neuron.get_func_weights(),
+        self.assertEqual(_np.equal(neuron.get_func_weights(),
                                     copy.get_func_weights()).all(),
                           False)
 
@@ -112,7 +112,7 @@ class TestLayer(unittest.TestCase):
         for neuron in l:
             count += 1
 
-        self.assertEquals(count, neuron_count)
+        self.assertEqual(count, neuron_count)
 
     def test_layer_returns_right_output(self):
         neuron_count = 45
@@ -199,7 +199,7 @@ class TestLayer(unittest.TestCase):
 
         _np_tests.assert_equal(actual_weights, 5.0)
         _np_tests.assert_equal(actual_func_weights, 34.0)
-        self.assertEquals(actual_all_weights.size, actual_weights.size + actual_func_weights.size)
+        self.assertEqual(actual_all_weights.size, actual_weights.size + actual_func_weights.size)
 
     def test_layer_set_weights(self):
         weights = _np.array([5.0, 5.0, 5.0])

@@ -1,5 +1,6 @@
 import numpy as _np
 from snn.optimizers.base_optimizer import BaseOptimizer
+from snn.optimizers.utils import gradient as _grad
 
 
 class GradientDescent(BaseOptimizer):
@@ -7,46 +8,43 @@ class GradientDescent(BaseOptimizer):
         Simple gradient descent method.
         Attributes:
             h -- step (Default: 1).
-            h_mul -- value which is multiplier for step(new_h = h * h_mul) (Default: 0.5).
+            h_good -- When we stepped in a good direction
+                      new step = old step * h_good. (Default: 1.01).
+            h_bad -- When we stepped in a bad direction
+                      new step = old step * h_bad (Default: 0.7).
+            eps: (Default: 1e-3)
     """
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.__h = kwargs.get("h", 1)
-        self.__h_mul = kwargs.get("h_mul", 0.5)
+        self.__h      = kwargs.get("h", 1)
+        self.__h_good = kwargs.get("h_good", 1.01)
+        self.__h_bad  = kwargs.get("h_bad", 0.7)
+        self.__eps    = kwargs.get("eps", 1e-3)
 
     def start(self, f, x):
         x = _np.array(x)
         h = self.__h
+        ph = h + self.__eps * 5
 
         iters = 0
-        while iters < self._maxIter:
-            gr_x = self.__grad(f, x)
-            new_x = x + -1 * gr_x * h
+        good_iteration = True
+        while iters < self._maxIter and\
+              (good_iteration or abs(ph - h) > self.__eps):
+            ph = h
+            gr_x = _grad(f, x)
+            new_x = x + -1.0 * gr_x * h
             if f(x) < f(new_x):
-                h *= self.__h_mul
+                h *= self.__h_bad
+                good_iteration = False
             else:
                 x = new_x
+                h *= self.__h_good
+                good_iteration = True
             iters += 1
             self._log.info("[Gradient Descent] Progress: %3.0f%%",
                            iters / self._maxIter * 100)
         return x
-
-    def __grad(self, f, x, dx=1e-5, norm=True):
-        if not hasattr(x, "__iter__"):
-            return (f(x + dx) - f(x)) / dx
-        else:
-            y = list()
-            for i in range(0, len(x)):
-                new_x = _np.array(x)
-                new_x[i] += dx
-                y.append((f(new_x) - f(x)) / dx)
-            y = _np.array(y)
-            if norm:
-                length = _np.sqrt(_np.sum(y ** 2))
-                if length != 0:
-                    y /= length
-            return y
 
 
 _optimizer_name = "gradient_descent"

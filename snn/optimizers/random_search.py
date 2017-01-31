@@ -19,19 +19,18 @@ class RandomSearch(BaseOptimizer):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.__rad = kwargs.get("rad", 1)
+        self.__rad           = kwargs.get("rad", 1)
         self.__step_increase = kwargs.get("step_increase", 1.5)
         self.__step_decrease = kwargs.get("step_decrease", 0.6)
-        self.__max_attempts = kwargs.get("max_attempts", 1000)
-        self.__eps = kwargs.get("eps", 1e-3)
+        self.__max_attempts  = kwargs.get("max_attempts", 1000)
+        self.__eps           = kwargs.get("eps", 1e-3)
 
     def start(self, f, x):
         rad = self.__rad
-        prev_rad = None
+        prev_rad = rad + self.__eps * 5
         iterations = 0
 
-        while iterations < self._maxIter and \
-                (prev_rad is None or abs(prev_rad - rad) > self.__eps):
+        while iterations < self._maxIter and abs(prev_rad - rad) > self.__eps:
             prev_rad = rad
             next_point = x + (-rad + rand(x.size) * rad * 2)
             fx = f(x)

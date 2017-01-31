@@ -1,5 +1,6 @@
 import numpy as _np
 from snn.optimizers.base_optimizer import BaseOptimizer
+from snn.optimizers.utils import gradient as _grad
 
 
 class Adam(BaseOptimizer):
@@ -11,7 +12,7 @@ class Adam(BaseOptimizer):
               h -- stepsize. (Default: 0.001)
               B1 -- first moment. (Default: 0.9)
               B2 -- second moment. (Default: 0.999)
-              e -- that tricky constant that make method more stable? (Default: 1e-8)
+              e -- that tricky constant that makes method more stable? (Default: 1e-8)
               eps -- Method stops when abs(previous_value - current_value) <= eps. (Default: 1e-3)
     """
 
@@ -33,7 +34,7 @@ class Adam(BaseOptimizer):
 
         while _np.abs(pf - f(x)) > self.__eps:
             t += 1
-            g = self.__grad(f, x)
+            g = _grad(f, x)
             m = self.__B1 * pm + (1.0 - self.__B1) * g
             v = self.__B2 * pv + (1.0 - self.__B2) * _np.square(g)
             pm = m
@@ -52,23 +53,9 @@ class Adam(BaseOptimizer):
             if current_f < minimum_f:
                 minimum_f = current_f
                 minimum_x = _np.array(x)
+
         return minimum_x
 
-    def __grad(self, f, x, dx=1e-3):
-        """
-        I already have gradient implementation in gradient_descent.py.
-        Maybe i should make it available for all?
-        """
-        result = _np.empty(x.shape, dtype=_np.float)
-        for i in range(0, len(x)):
-            tmp_x = _np.array(x)
-            tmp_x[i] += dx
-            f1 = f(tmp_x)
-            tmp_x[i] -= 2 * dx
-            f2 = f(tmp_x)
-            dy = (f1 - f2) / (2 * dx)
-            result[i] = dy
-        return result
 
 _optimizer_name = "adam"
 _class_type = Adam

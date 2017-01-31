@@ -12,11 +12,11 @@ class Test_fast_nn(unittest.TestCase):
 
         neurons = _fnn.make_neurons(func_name, neuron_count)
 
-        self.assertEquals(len(neurons), neuron_count)
+        self.assertEqual(len(neurons), neuron_count)
         for neuron in neurons:
-            self.assertEquals(neuron.func_name(), func_name)
-            self.assertEquals(neuron.f_len(), 0)
-            self.assertEquals(type(neuron), snn.Neuron)
+            self.assertEqual(neuron.func_name(), func_name)
+            self.assertEqual(neuron.f_len(), 0)
+            self.assertEqual(type(neuron), snn.Neuron)
 
     def test_make_neurons_002(self):
         neuron_count = 5
@@ -25,14 +25,14 @@ class Test_fast_nn(unittest.TestCase):
 
         neurons = _fnn.make_neurons(func_name, neuron_count, func_weights_count)
 
-        self.assertEquals(len(neurons), neuron_count)
+        self.assertEqual(len(neurons), neuron_count)
         for i in range(0, len(neurons)):
-            self.assertEquals(neurons[i].f_len(), func_weights_count)
-            self.assertEquals(type(neurons[i]), snn.Neuron)
+            self.assertEqual(neurons[i].f_len(), func_weights_count)
+            self.assertEqual(type(neurons[i]), snn.Neuron)
             if i < 1:
-                self.assertEquals(neurons[i].func_name(), func_name[0])
+                self.assertEqual(neurons[i].func_name(), func_name[0])
             else:
-                self.assertEquals(neurons[i].func_name(), func_name[1])
+                self.assertEqual(neurons[i].func_name(), func_name[1])
 
     def test_make_layer_001(self):
         neuron_count = 5
@@ -40,13 +40,13 @@ class Test_fast_nn(unittest.TestCase):
 
         layer = _fnn.make_layer(func_name, neuron_count)
 
-        self.assertEquals(type(layer), snn.Layer)
+        self.assertEqual(type(layer), snn.Layer)
         count = 0
         for neuron in layer:
-            self.assertEquals(neuron.func_name(), func_name)
-            self.assertEquals(neuron.f_len(), 0)
+            self.assertEqual(neuron.func_name(), func_name)
+            self.assertEqual(neuron.f_len(), 0)
             count += 1
-        self.assertEquals(count, neuron_count)
+        self.assertEqual(count, neuron_count)
 
 
     def test_rnd_weights(self):
