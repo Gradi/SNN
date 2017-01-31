@@ -52,6 +52,7 @@ _functions.append({"f": _sphere5d,
                    "bounds": (-10, 10),
                    "atol": 0.1})
 
+
 def _rnd_point(num, bounds):
     """
     Function which is called from test
