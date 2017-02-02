@@ -1,5 +1,4 @@
 from numpy import abs, array
-from time import time
 from snn.optimizers.base_optimizer import BaseOptimizer
 
 
@@ -24,6 +23,7 @@ class CoordinateDescent(BaseOptimizer):
         h = self.__h
         pf = f(x) + self.__eps * 5
         iteration_successful = False
+
 
 
         while iterations < self._maxIter and abs(pf - f(x)) > self.__eps:
@@ -51,7 +51,6 @@ class CoordinateDescent(BaseOptimizer):
                 h *= self.__h_bad
 
             iterations += 1
-
             # self._log.info("[Coordinate Descent]\n"
             #                "\tIteration: %3.2f%% (%s).\n"
             #                "\tCurrent h: %f\n"
@@ -68,7 +67,7 @@ class CoordinateDescent(BaseOptimizer):
 
         f_curr = f(x)
         f_next = f(x + max_h)
-        while f_next < f_curr and abs(f_curr - f_next) > (self.__eps / 100):
+        while f_next < f_curr and abs(f_curr - f_next) > (self.__eps / 1000.0):
             f_curr = f_next
             ph = max_h
             max_h *= 1.1
@@ -76,8 +75,12 @@ class CoordinateDescent(BaseOptimizer):
 
         x += ph
         while abs(h) > self.__eps:
-            while f(x + h) < f(x):
+            f_curr = f(x)
+            f_next = f(x + h)
+            while f_next < f_curr and abs(f_next - f_curr) > (self.__eps / 1000.0):
+                f_curr = f_next
                 x += h
+                f_next = f(x)
             h *= self.__h_bad
         return x
 
