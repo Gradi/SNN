@@ -28,7 +28,7 @@ _functions.append({"f": _rosenbrock_function,
                    "num": 2,
                    "min": _np.array([_a, _a ** 2]),
                    "bounds": (-7.0, -7.5),
-                   "atol": 0.2})
+                   "atol": 0.09})
 
 
 def _simple_function_001(x):
