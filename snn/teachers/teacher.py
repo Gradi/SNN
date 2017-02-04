@@ -27,7 +27,7 @@ class Teacher:
         """
             Main teach function. Call this function when you
             want to teach you net.
-        :param network: instance of SNN class.
+        :param network: instance of Perceptron class.
         :param test_data: dict in form {"x": inputs, "y": outputs} which
                           is used as train data.
         :param nb_epoch: Number of epochs. Optional.
