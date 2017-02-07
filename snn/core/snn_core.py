@@ -52,7 +52,8 @@ class Neuron:
         self.__weights = weights
 
     def set_func_weights(self, weights):
-         self.__func_weights = weights
+        self.__func_weights = weights
+        self.__func_weights_count = weights.size
 
     def copy(self):
         weights = None
@@ -105,6 +106,8 @@ class Layer:
                 weights = _np.array(self.__W[ri].A1)
                 neuron = self.__neurons[ri]
                 neuron.set_input_weights(weights)
+                if self.__F is not None:
+                    neuron.set_func_weights(self.__F[ri])
                 yield neuron
         self.__update_matrix()
         self.__optimize_neurons()
@@ -144,9 +147,13 @@ class Layer:
 
     def get_weights(self, weights_type="all"):
         func_weights = _np.array([])
-        for neuron in self:
-            if neuron.f_len() != 0:
-                func_weights = _np.append(func_weights, neuron.get_func_weights())
+        if self.__F is not None:
+            func_weights = _np.array(self.__F.flatten())
+        else:
+            for neuron in self:
+                if neuron.f_len() != 0:
+                    func_weights = _np.append(func_weights, neuron.get_func_weights())
+
         if weights_type == "all":
             res = _np.array(self.__W.A1)
             res = _np.append(res, func_weights)
@@ -162,21 +169,19 @@ class Layer:
         W = weights[0:self.__W.size].reshape(self.__W.shape)
         self.__W = _np.matrix(W, copy=False)
         if self.__W.size != weights.size:
-            total = 0
             func_weights = weights[self.__W.size:]
+            self.set_func_weights(func_weights)
+
+    def set_func_weights(self, weights):
+        if self.__F is not None:
+            self.__F = weights.reshape(self.__F.shape)
+        else:
+            total = 0
             for neuron in self.__neurons:
                 f_len = neuron.f_len()
                 if f_len != 0:
-                    neuron.set_func_weights(func_weights[total:total + f_len])
+                    neuron.set_func_weights(weights[total:total + f_len])
                     total += f_len
-
-    def set_func_weights(self, weights):
-        total = 0
-        for neuron in self.__neurons:
-            f_len = neuron.f_len()
-            if f_len != 0:
-                neuron.set_func_weights(weights[total:total + f_len])
-                total += f_len
 
     def __update_matrix(self):
         try:
@@ -199,7 +204,7 @@ class Layer:
             if self.func_weights_count:
                 self.__F = _np.array([], dtype=_np.float)
                 for neuron in self.__neurons:
-                    self.__F = _np.append(self.__F, neuron.get_)
+                    self.__F = _np.append(self.__F, neuron.get_func_weights())
 
     def __neurons_can_be_optimized(self):
         # If all neurons have the same function and func_weights
@@ -209,8 +214,12 @@ class Layer:
         # Because numpy can run function element wisely and because len of F
         # equal to len of input (or zero if every neuron doesn't have func_weights)
         func_name = self.__neurons[0].func_name()
+        f_len = self.__neurons[0].f_len()
+        if f_len != 0 and f_len != 1:
+            return False
         for neuron in self.__neurons:
             if func_name != neuron.func_name():
                 return False
-            if neuron.f_len() != 0 and neuron.f_len() != 1:
+            if f_len != neuron.f_len():
                 return False
+        return True

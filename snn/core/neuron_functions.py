@@ -30,7 +30,7 @@ def _neuron_func_simple_sigmoid(x, k=1):
 
 
 def _neuron_func_npower(x, k=1):
-    if k == 1:
+    if _np.allclose(k, 1.0):
         return x
     else:
         # This "workout" needed

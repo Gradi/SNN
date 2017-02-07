@@ -222,3 +222,24 @@ class TestLayer(unittest.TestCase):
         _np_tests.assert_equal(l.get_weights("input"), 0)
         l.set_func_weights(func_weights)
         _np_tests.assert_equal(l.get_weights("func"), -0.4)
+
+    def test_func_weights_give_right_output(self):
+        l = snn.Layer()
+        for i in range(0, 5):
+            l.add_neurons(snn.Neuron("npower", func_weights_count=1))
+
+        input = _np.array([1, 1, 1])
+        good_output = _np.array([3.0, 9.0, 27.0, 81.0, 243.0]).reshape(5, 1)
+
+        for neuron in l:
+            neuron.set_input_weights(_np.array([1.0, 1.0, 1.0]))
+            neuron.set_func_weights(_np.array(0.0))
+
+        func_weights = _np.array([1, 2, 3, 4, 5])
+        l.set_func_weights(func_weights)
+
+        real_output = l.input(input.reshape(3, 1))
+
+        self.assertEquals(real_output.size, 5)
+        _np_tests.assert_array_equal(real_output, good_output)
+
