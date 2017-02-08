@@ -20,6 +20,8 @@ class Teacher:
             self._logging_config["level"] = _log.NOTSET
         if self._logging_config is not None:
             _log.basicConfig(**self._logging_config)
+        else:
+            _log.basicConfig(level=_log.CRITICAL)
         self._log = _log.getLogger("teachers.{}".format(type(self).__name__))
 
     def teach(self, network, test_data, nb_epoch=None, eps=None,

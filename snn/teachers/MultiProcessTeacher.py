@@ -35,7 +35,7 @@ class MultiProcessTeacher(Teacher):
 
     def teach(self, network, test_data, nb_epoch=None, eps=None,
               callback=None, separate_weights=False):
-        self.__net_json = network.to_json()
+        self.__net_json = network.to_json(False)
         self.__test_data = test_data
         self.__nb_epoch = nb_epoch
         self.__eps = eps
@@ -43,6 +43,10 @@ class MultiProcessTeacher(Teacher):
         if callback is not None:
             self._log.warn("Currently callback function is not supported in "
                            "MultiProcessTeacher.")
+        weights, error = self._get_best_weights_error()
+        network = network.copy()
+        network.set_weights(weights)
+        return network, error
 
     def _get_best_weights_error(self):
         start_time = time.time()

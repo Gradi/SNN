@@ -15,7 +15,7 @@ class Neuron:
         self.__func_name = func_name
         self.__func = _nf.get(func_name)
         if func_weights is not None:
-            self.__func_weights_count = len(func_weights)
+            self.__func_weights_count = func_weights.size
         else:
             self.__func_weights_count = func_weights_count
 
