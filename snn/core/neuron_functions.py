@@ -26,7 +26,12 @@ def _neuron_func_ququadratic(x):
 
 
 def _neuron_func_simple_sigmoid(x, k=1):
-    return (k * x) / (1 + _np.abs(k * x))
+    if hasattr(k, "size") and k.size == 2:
+        x = x + k[1]
+        y = (k[0] * x) / (1 + _np.abs(k[0] * x))
+    else:
+        y = (k * x) / (1 + _np.abs(k * x))
+    return y
 
 
 def _neuron_func_npower(x, k=1):
