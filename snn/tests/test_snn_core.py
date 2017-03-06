@@ -34,7 +34,7 @@ class TestNeuron(unittest.TestCase):
 
         _np_tests.assert_allclose(output, 729.0)
 
-    def  test_neuron_set_weights(self):
+    def test_neuron_set_weights(self):
         weights = _np.array([1.0, 1.0, 1.0])
         func_weights = _np.array([5.0, 5.0, 5.0, 4.0])
 

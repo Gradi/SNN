@@ -119,7 +119,7 @@ class Layer:
                 assert result.shape[0] == self.__F.size
                 result = _np.array(result, copy=False)
                 result = self.__function(result, self.__F.reshape((result.shape[0], 1)))
-                return _np.matrix(result)
+                return _np.matrix(result, copy=False)
             else:
                 return self.__function(result)
         else:
